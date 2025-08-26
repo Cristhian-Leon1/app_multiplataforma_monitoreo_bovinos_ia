@@ -1,0 +1,1 @@
+# app_multiplataforma_monitoreo_bovinos_ia
