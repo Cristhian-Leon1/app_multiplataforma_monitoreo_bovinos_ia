@@ -40,6 +40,12 @@ class AppTheme {
         borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
     ),
+    // Configuración del cursor
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: primaryColor,
+      selectionColor: Color(0x404CAF50),
+      selectionHandleColor: primaryColor,
+    ),
     // Estilos de texto para tema claro
     textTheme: const TextTheme(
       // Títulos principales
@@ -160,6 +166,12 @@ class AppTheme {
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
+    ),
+    // Configuración del cursor para tema oscuro
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: primaryColor,
+      selectionColor: Color(0x404CAF50),
+      selectionHandleColor: primaryColor,
     ),
     // Estilos de texto para tema oscuro
     textTheme: const TextTheme(
@@ -352,7 +364,7 @@ class SystemBarsConfig {
       const SystemUiOverlayStyle(
         // Status bar (barra superior)
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.light,
         statusBarBrightness: Brightness.light,
 
         // Navigation bar (barra inferior)

@@ -1,0 +1,151 @@
+{
+  "@@locale": "es",
+  "appName": "Monitoreo Bovinos IA",
+  "@appName": {
+    "description": "Nombre de la aplicación"
+  },
+  "welcome": "Bienvenido",
+  "@welcome": {
+    "description": "Mensaje de bienvenida"
+  },
+  "loginTitle": "Iniciar Sesión",
+  "@loginTitle": {
+    "description": "Título de la pantalla de login"
+  },
+  "registerTitle": "Crear Cuenta",
+  "@registerTitle": {
+    "description": "Título de la pantalla de registro"
+  },
+  "loginSubtitle": "Ingresa tus credenciales para continuar",
+  "@loginSubtitle": {
+    "description": "Subtítulo de la pantalla de login"
+  },
+  "registerSubtitle": "Llena los datos para crear tu cuenta",
+  "@registerSubtitle": {
+    "description": "Subtítulo de la pantalla de registro"
+  },
+  "email": "Correo electrónico",
+  "@email": {
+    "description": "Campo de correo electrónico"
+  },
+  "password": "Contraseña",
+  "@password": {
+    "description": "Campo de contraseña"
+  },
+  "confirmPassword": "Confirmar contraseña",
+  "@confirmPassword": {
+    "description": "Campo de confirmar contraseña"
+  },
+  "fullName": "Nombre completo",
+  "@fullName": {
+    "description": "Campo de nombre completo"
+  },
+  "login": "Iniciar Sesión",
+  "@login": {
+    "description": "Botón de iniciar sesión"
+  },
+  "register": "Crear Cuenta",
+  "@register": {
+    "description": "Botón de crear cuenta"
+  },
+  "dontHaveAccount": "¿No tienes cuenta? ",
+  "@dontHaveAccount": {
+    "description": "Pregunta si no tiene cuenta"
+  },
+  "alreadyHaveAccount": "¿Ya tienes cuenta? ",
+  "@alreadyHaveAccount": {
+    "description": "Pregunta si ya tiene cuenta"
+  },
+  "createOne": "Crear una",
+  "@createOne": {
+    "description": "Enlace para crear cuenta"
+  },
+  "signIn": "Iniciar sesión",
+  "@signIn": {
+    "description": "Enlace para iniciar sesión"
+  },
+  "forgotPassword": "¿Olvidaste tu contraseña?",
+  "@forgotPassword": {
+    "description": "Enlace de contraseña olvidada"
+  },
+  "resetPassword": "Recuperar Contraseña",
+  "@resetPassword": {
+    "description": "Título del diálogo de recuperar contraseña"
+  },
+  "resetPasswordMessage": "Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.",
+  "@resetPasswordMessage": {
+    "description": "Mensaje del diálogo de recuperar contraseña"
+  },
+  "send": "Enviar",
+  "@send": {
+    "description": "Botón enviar"
+  },
+  "cancel": "Cancelar",
+  "@cancel": {
+    "description": "Botón cancelar"
+  },
+  "processing": "Procesando...",
+  "@processing": {
+    "description": "Mensaje de procesando"
+  },
+  "appDescription": "Gestiona tu ganado con inteligencia artificial",
+  "@appDescription": {
+    "description": "Descripción de la aplicación"
+  },
+  "cattleMonitoring": "Monitoreo de Bovinos",
+  "@cattleMonitoring": {
+    "description": "Título de monitoreo de bovinos"
+  },
+  "manageDescription": "Gestiona y monitorea tu ganado con tecnología de IA",
+  "@manageDescription": {
+    "description": "Descripción de gestión"
+  },
+  "identifyCattle": "Identificar Bovino",
+  "@identifyCattle": {
+    "description": "Opción de identificar bovino"
+  },
+  "scanWithAI": "Escanear con IA",
+  "@scanWithAI": {
+    "description": "Subtítulo de escanear con IA"
+  },
+  "statistics": "Estadísticas",
+  "@statistics": {
+    "description": "Opción de estadísticas"
+  },
+  "viewReports": "Ver reportes",
+  "@viewReports": {
+    "description": "Subtítulo de ver reportes"
+  },
+  "myCattle": "Mi Ganado",
+  "@myCattle": {
+    "description": "Opción de mi ganado"
+  },
+  "completeList": "Lista completa",
+  "@completeList": {
+    "description": "Subtítulo de lista completa"
+  },
+  "settings": "Configuración",
+  "@settings": {
+    "description": "Opción de configuración"
+  },
+  "preferences": "Preferencias",
+  "@preferences": {
+    "description": "Subtítulo de preferencias"
+  },
+  "logout": "Cerrar Sesión",
+  "@logout": {
+    "description": "Opción de cerrar sesión"
+  },
+  "logoutConfirm": "¿Estás seguro de que quieres cerrar sesión?",
+  "@logoutConfirm": {
+    "description": "Confirmación de cerrar sesión"
+  },
+  "comingSoon": "Función próximamente",
+  "@comingSoon": {
+    "description": "Mensaje de función próximamente"
+  },
+  "user": "Usuario",
+  "@user": {
+    "description": "Usuario por defecto"
+  }
+}

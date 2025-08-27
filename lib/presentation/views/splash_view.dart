@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/app_logo.dart';
 import '../../core/app_routes.dart';
 import '../../core/constants.dart';
 import '../../core/app_theme.dart';
+import '../../core/app_localizations.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -53,10 +55,12 @@ class _SplashViewState extends State<SplashView>
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final isLoggedIn = await authProvider.checkAuthStatus();
 
-      if (isLoggedIn) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
-      } else {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+      if (mounted) {
+        if (isLoggedIn) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        } else {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+        }
       }
     }
   }
@@ -95,39 +99,7 @@ class _SplashViewState extends State<SplashView>
                     scale: _scaleAnimation.value,
                     child: FadeTransition(
                       opacity: _fadeAnimation,
-                      child: Container(
-                        width: 160,
-                        height: 160,
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 25,
-                              offset: const Offset(0, 15),
-                              spreadRadius: 2,
-                            ),
-                            BoxShadow(
-                              color: Colors.white.withOpacity(0.8),
-                              blurRadius: 8,
-                              offset: const Offset(0, 0),
-                              spreadRadius: -2,
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          AppConstants.logoPath,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.agriculture,
-                              size: 90,
-                              color: Color(0xFF2E7D32),
-                            );
-                          },
-                        ),
-                      ),
+                      child: const AppLogo(), // Usa el tamaño por defecto (160)
                     ),
                   );
                 },
@@ -144,7 +116,7 @@ class _SplashViewState extends State<SplashView>
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Text(
-                  'Tecnología para el campo',
+                  AppLocalizations.of(context).slogan,
                   style: AppTextStyles.splashSubtitle,
                 ),
               ),

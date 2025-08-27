@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/app_theme.dart';
 import 'core/app_routes.dart';
 import 'core/constants.dart';
+import 'core/app_localizations.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/views/splash_view.dart';
 import 'presentation/views/login_view.dart';
@@ -31,6 +33,16 @@ class MyApp extends StatelessWidget {
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('es', ''), // Español
+          Locale('guc', ''), // Wayuunaiki
+        ],
         initialRoute: AppRoutes.splash,
         routes: {
           AppRoutes.splash: (context) =>
@@ -57,7 +69,7 @@ class AppWrapper extends StatelessWidget {
         if (authProvider.isLoggedIn) {
           return const HomeView();
         }
-        
+
         // Si no está autenticado, comenzar con SplashView
         return const SplashView();
       },

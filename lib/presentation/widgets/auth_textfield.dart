@@ -45,16 +45,10 @@ class _AuthTextFieldState extends State<AuthTextField> {
         obscureText: widget.isPassword ? _obscureText : false,
         keyboardType: widget.keyboardType,
         validator: widget.validator,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Colors.black87,
-        ),
+        style: const TextStyle(fontSize: 16, color: Colors.black87),
         decoration: InputDecoration(
           hintText: widget.hintText,
-          hintStyle: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 16,
-          ),
+          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
           prefixIcon: Icon(
             widget.prefixIcon,
             color: const Color(0xFF2E7D32),
@@ -84,10 +78,7 @@ class _AuthTextFieldState extends State<AuthTextField> {
             horizontal: 20,
             vertical: 18,
           ),
-          errorStyle: const TextStyle(
-            color: Colors.red,
-            fontSize: 12,
-          ),
+          errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
         ),
       ),
     );
