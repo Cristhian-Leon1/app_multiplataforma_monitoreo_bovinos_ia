@@ -318,7 +318,7 @@ class _LoginViewState extends State<LoginView> {
 
     if (authProvider.isLoginMode) {
       final success = await authProvider.login();
-      
+
       if (success) {
         // Si el login fue exitoso, navegar a HomeView
         if (mounted) {
@@ -328,7 +328,7 @@ class _LoginViewState extends State<LoginView> {
     } else {
       // Intentar registrar usuario
       final success = await authProvider.register();
-      
+
       if (success) {
         // Si el registro fue exitoso, cambiar al modo login y mostrar diálogo
         _showRegistrationSuccessDialog(authProvider);
@@ -439,9 +439,9 @@ class _LoginViewState extends State<LoginView> {
               const SizedBox(height: 10),
               Text(
                 'Ahora puedes iniciar sesión con tus credenciales.', // _localizations.nowCanLogin,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
               ),
             ],
           ),
@@ -455,7 +455,8 @@ class _LoginViewState extends State<LoginView> {
                 // Cambiar al modo login y limpiar campos
                 authProvider.toggleAuthMode();
                 // Limpiar el campo de email del login y poner el email registrado
-                authProvider.loginEmailController.text = authProvider.registerEmailController.text;
+                authProvider.loginEmailController.text =
+                    authProvider.registerEmailController.text;
                 authProvider.loginPasswordController.clear();
               },
               style: ElevatedButton.styleFrom(
@@ -465,7 +466,9 @@ class _LoginViewState extends State<LoginView> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text('Continuar al Login'), // _localizations.continueLogin),
+              child: Text(
+                'Continuar al Login',
+              ), // _localizations.continueLogin),
             ),
           ],
         );

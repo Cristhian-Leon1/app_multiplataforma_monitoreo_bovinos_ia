@@ -13,6 +13,8 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoginMode = true; // true para login, false para registro
   String? _userToken;
   UserModel? _userData;
+  bool _isInitialized =
+      false; // Para controlar si ya se verificó la sesión almacenada
 
   // Controllers para persistencia de formularios
   final TextEditingController _loginEmailController = TextEditingController();
@@ -26,6 +28,11 @@ class AuthProvider extends ChangeNotifier {
   final TextEditingController _registerConfirmPasswordController =
       TextEditingController();
 
+  // Constructor que inicializa automáticamente la sesión
+  AuthProvider() {
+    _initializeAuth();
+  }
+
   // Getters para el estado
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -33,6 +40,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoginMode => _isLoginMode;
   String? get userToken => _userToken;
   UserModel? get userData => _userData;
+  bool get isInitialized => _isInitialized;
 
   // Getters para los controllers (persistencia de formularios)
   TextEditingController get loginEmailController => _loginEmailController;
@@ -118,7 +126,7 @@ class AuthProvider extends ChangeNotifier {
 
       // NO auto-logueamos al usuario para permitir el flujo de confirmación
       // Solo registramos y retornamos éxito
-      
+
       // Limpiar campos del formulario de registro
       _clearRegisterFields();
 
@@ -129,6 +137,67 @@ class AuthProvider extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  // Inicialización automática de la sesión almacenada
+  Future<void> _initializeAuth() async {
+    try {
+      _setLoading(true);
+
+      // Verificar si hay una sesión activa usando el método del StorageService
+      final hasActiveSession = await StorageService.hasActiveSession();
+
+      if (!hasActiveSession) {
+        print('No hay sesión activa almacenada');
+        return;
+      }
+
+      // Obtener datos de la sesión almacenada
+      final storedToken = await StorageService.getAccessToken();
+      final storedUserData = await StorageService.getUserData();
+
+      if (storedToken != null && storedUserData != null) {
+        try {
+          // Verificar con el backend (ahora que está arreglado)
+          await ApiService.verifyToken(storedToken);
+
+          // Si llegamos aquí, el token es válido
+          _userToken = storedToken;
+          _userData = storedUserData;
+          _isLoggedIn = true;
+          print(
+            '✅ Sesión restaurada exitosamente para: ${storedUserData.email}',
+          );
+        } catch (e) {
+          print('❌ Error verificando token con backend: $e');
+          // Token inválido o expirado, limpiar datos
+          await _clearStoredAuthData();
+          print('🧹 Sesión limpiada debido a token inválido');
+        }
+      } else {
+        print('⚠️ Datos de sesión incompletos, limpiando...');
+        await _clearStoredAuthData();
+      }
+    } catch (e) {
+      print('💥 Error inicializando autenticación: $e');
+      // En caso de error, limpiar datos para evitar estados inconsistentes
+      try {
+        await _clearStoredAuthData();
+      } catch (clearError) {
+        print('🚨 Error adicional limpiando datos: $clearError');
+      }
+    } finally {
+      _isInitialized = true;
+      _setLoading(false);
+    }
+  }
+
+  // Método auxiliar para limpiar datos de autenticación almacenados
+  Future<void> _clearStoredAuthData() async {
+    await StorageService.clearAuthData();
+    _isLoggedIn = false;
+    _userToken = null;
+    _userData = null;
   }
 
   // Cerrar sesión

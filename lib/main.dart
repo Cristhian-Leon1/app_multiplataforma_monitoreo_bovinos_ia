@@ -65,6 +65,11 @@ class AppWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
+        // Mostrar splash hasta que se complete la inicialización
+        if (!authProvider.isInitialized) {
+          return const SplashView();
+        }
+
         // Si está autenticado, mostrar HomeView
         if (authProvider.isLoggedIn) {
           return const HomeView();
