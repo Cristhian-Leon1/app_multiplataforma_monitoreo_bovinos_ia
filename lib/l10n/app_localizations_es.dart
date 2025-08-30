@@ -120,4 +120,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get user => 'Usuario';
+
+  @override
+  String get success => 'Éxito';
+
+  @override
+  String get userCreatedSuccessfully => '¡Usuario creado exitosamente!';
+
+  @override
+  String get nowCanLogin => 'Ahora puedes iniciar sesión con tus credenciales.';
+
+  @override
+  String get continueLogin => 'Continuar al Login';
 }

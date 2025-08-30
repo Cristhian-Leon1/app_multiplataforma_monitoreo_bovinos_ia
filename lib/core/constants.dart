@@ -3,8 +3,8 @@ class AppConstants {
   static const int splashDuration = 5; // segundos
 
   // URLs de API
-  static const String apiBaseUrl = 'https://api.example.com';
-  static const String apiVersion = 'v1';
+  static const String apiBaseUrl = 'https://ashajaaia.onrender.com/api/v1';
+  static const String authBaseUrl = '$apiBaseUrl/auth';
 
   // Configuración de la aplicación
   static const String appName = 'Ashajaa AI';

@@ -119,4 +119,16 @@ class AppLocalizationsGuc extends AppLocalizations {
 
   @override
   String get user => 'Wayuu';
+
+  @override
+  String get success => 'Asirü';
+
+  @override
+  String get userCreatedSuccessfully => '¡Wayuu ekaalü asirü!';
+
+  @override
+  String get nowCanLogin => 'Jüshii achajüin süchukua süka.';
+
+  @override
+  String get continueLogin => 'Achajüin süpüla';
 }

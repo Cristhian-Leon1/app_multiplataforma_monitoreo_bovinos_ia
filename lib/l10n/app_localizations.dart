@@ -319,6 +319,30 @@ abstract class AppLocalizations {
   /// In es, this message translates to:
   /// **'Usuario'**
   String get user;
+
+  /// Mensaje de éxito
+  ///
+  /// In es, this message translates to:
+  /// **'Éxito'**
+  String get success;
+
+  /// Mensaje de usuario creado con éxito
+  ///
+  /// In es, this message translates to:
+  /// **'¡Usuario creado exitosamente!'**
+  String get userCreatedSuccessfully;
+
+  /// Mensaje indicando que puede iniciar sesión
+  ///
+  /// In es, this message translates to:
+  /// **'Ahora puedes iniciar sesión con tus credenciales.'**
+  String get nowCanLogin;
+
+  /// Botón para continuar al formulario de login
+  ///
+  /// In es, this message translates to:
+  /// **'Continuar al Login'**
+  String get continueLogin;
 }
 
 class _AppLocalizationsDelegate

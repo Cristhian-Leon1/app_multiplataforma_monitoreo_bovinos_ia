@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../data/services/api_service.dart';
+import '../../data/services/storage_service.dart';
+import '../../data/models/user_model.dart';
 
 /// AuthProvider - Maneja todo el estado de autenticación de la aplicación
 /// Siguiendo el principio de responsabilidad única (SRP)
@@ -9,7 +12,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool _isLoginMode = true; // true para login, false para registro
   String? _userToken;
-  Map<String, dynamic>? _userData;
+  UserModel? _userData;
 
   // Controllers para persistencia de formularios
   final TextEditingController _loginEmailController = TextEditingController();
@@ -29,7 +32,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   bool get isLoginMode => _isLoginMode;
   String? get userToken => _userToken;
-  Map<String, dynamic>? get userData => _userData;
+  UserModel? get userData => _userData;
 
   // Getters para los controllers (persistencia de formularios)
   TextEditingController get loginEmailController => _loginEmailController;
@@ -64,21 +67,26 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
-      // Simular llamada a API - Aquí iría la lógica real
-      await Future.delayed(const Duration(seconds: 2));
+      // Llamada real a la API
+      final tokenResponse = await ApiService.login(
+        email: email,
+        password: password,
+      );
 
-      // TODO: Reemplazar con llamada real a la API
-      if (await _performLogin(email, password)) {
-        _setUserData({'email': email, 'name': 'Usuario Demo', 'id': '123456'});
-        _setToken('demo_token_123456');
-        _isLoggedIn = true;
-        return true;
-      } else {
-        _setError('Credenciales inválidas');
-        return false;
-      }
+      // Guardar datos en storage local
+      await StorageService.saveAccessToken(tokenResponse.accessToken);
+      await StorageService.saveRefreshToken(tokenResponse.refreshToken);
+      await StorageService.saveUserData(tokenResponse.user);
+      await StorageService.saveTokenExpiration(tokenResponse.expiresIn);
+
+      // Actualizar estado
+      _setUserData(tokenResponse.user);
+      _setToken(tokenResponse.accessToken);
+      _isLoggedIn = true;
+
+      return true;
     } catch (e) {
-      _setError('Error al iniciar sesión: ${e.toString()}');
+      _setError(e.toString().replaceFirst('Exception: ', ''));
       return false;
     } finally {
       _setLoading(false);
@@ -101,25 +109,22 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
-      // Simular llamada a API
-      await Future.delayed(const Duration(seconds: 2));
+      // Llamada real a la API - solo validamos que sea exitosa
+      await ApiService.register(
+        email: email,
+        password: password,
+        nombreCompleto: name,
+      );
 
-      // TODO: Reemplazar con llamada real a la API
-      if (await _performRegister(name, email, password)) {
-        _setUserData({
-          'email': email,
-          'name': name,
-          'id': 'new_user_${DateTime.now().millisecondsSinceEpoch}',
-        });
-        _setToken('new_token_${DateTime.now().millisecondsSinceEpoch}');
-        _isLoggedIn = true;
-        return true;
-      } else {
-        _setError('Error al crear la cuenta');
-        return false;
-      }
+      // NO auto-logueamos al usuario para permitir el flujo de confirmación
+      // Solo registramos y retornamos éxito
+      
+      // Limpiar campos del formulario de registro
+      _clearRegisterFields();
+
+      return true;
     } catch (e) {
-      _setError('Error al registrarse: ${e.toString()}');
+      _setError(e.toString().replaceFirst('Exception: ', ''));
       return false;
     } finally {
       _setLoading(false);
@@ -127,13 +132,24 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // Cerrar sesión
-  void logout() {
-    _isLoggedIn = false;
-    _userToken = null;
-    _userData = null;
-    _clearError();
-    // TODO: Limpiar datos persistentes (SharedPreferences, SecureStorage)
-    notifyListeners();
+  Future<void> logout() async {
+    try {
+      // Llamar a la API de logout si hay token
+      if (_userToken != null) {
+        await ApiService.logout(_userToken!);
+      }
+    } catch (e) {
+      // Si falla el logout en el servidor, continuar con logout local
+      print('Error al cerrar sesión en servidor: $e');
+    } finally {
+      // Limpiar datos locales
+      await StorageService.clearAuthData();
+      _isLoggedIn = false;
+      _userToken = null;
+      _userData = null;
+      _clearError();
+      notifyListeners();
+    }
   }
 
   // Recuperar contraseña
@@ -163,13 +179,32 @@ class AuthProvider extends ChangeNotifier {
   // Verificar estado de autenticación (para splash screen)
   Future<bool> checkAuthStatus() async {
     try {
-      // TODO: Verificar token almacenado en SharedPreferences/SecureStorage
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Verificar si hay una sesión activa en storage
+      final hasSession = await StorageService.hasActiveSession();
+      if (!hasSession) {
+        return false;
+      }
 
-      // Simular verificación de token
-      if (_userToken != null && _userToken!.isNotEmpty) {
-        _isLoggedIn = true;
-        return true;
+      // Obtener token y datos del usuario
+      final token = await StorageService.getAccessToken();
+      final userData = await StorageService.getUserData();
+
+      if (token != null && userData != null) {
+        // Verificar token con el servidor
+        try {
+          await ApiService.verifyToken(token);
+
+          // Si el token es válido, actualizar estado
+          _userToken = token;
+          _userData = userData;
+          _isLoggedIn = true;
+          notifyListeners();
+          return true;
+        } catch (e) {
+          // Si el token no es válido, limpiar datos
+          await StorageService.clearAuthData();
+          return false;
+        }
       }
 
       return false;
@@ -199,9 +234,17 @@ class AuthProvider extends ChangeNotifier {
     _registerConfirmPasswordController.clear();
   }
 
+  // Método privado para limpiar solo campos de registro
+  void _clearRegisterFields() {
+    _registerNameController.clear();
+    _registerEmailController.clear();
+    _registerPasswordController.clear();
+    _registerConfirmPasswordController.clear();
+  }
+
   // Actualizar datos del usuario
-  void updateUserData(Map<String, dynamic> newData) {
-    _userData = {...(_userData ?? {}), ...newData};
+  void updateUserData(UserModel newData) {
+    _userData = newData;
     notifyListeners();
   }
 
@@ -255,22 +298,9 @@ class AuthProvider extends ChangeNotifier {
     return true;
   }
 
-  // Simulación de login - Reemplazar con llamada real a API
-  Future<bool> _performLogin(String email, String password) async {
-    // TODO: Implementar llamada real a la API
-    // Ejemplo: final response = await apiService.login(email, password);
-    return email.isNotEmpty && password.isNotEmpty;
-  }
-
-  // Simulación de registro - Reemplazar con llamada real a API
-  Future<bool> _performRegister(
-    String name,
-    String email,
-    String password,
-  ) async {
-    // TODO: Implementar llamada real a la API
-    // Ejemplo: final response = await apiService.register(name, email, password);
-    return name.isNotEmpty && email.isNotEmpty && password.isNotEmpty;
+  // Validación de email
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
   // Gestión de estado
@@ -291,17 +321,10 @@ class AuthProvider extends ChangeNotifier {
 
   void _setToken(String token) {
     _userToken = token;
-    // TODO: Guardar token en SecureStorage
   }
 
-  void _setUserData(Map<String, dynamic> data) {
+  void _setUserData(UserModel data) {
     _userData = data;
-    // TODO: Guardar datos del usuario en SharedPreferences
-  }
-
-  // Validación de email
-  bool _isValidEmail(String email) {
-    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
   @override

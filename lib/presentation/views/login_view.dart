@@ -7,6 +7,7 @@ import '../widgets/app_logo.dart';
 import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/app_localizations.dart';
+import '../../core/app_routes.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -316,9 +317,22 @@ class _LoginViewState extends State<LoginView> {
     FocusScope.of(context).unfocus();
 
     if (authProvider.isLoginMode) {
-      await authProvider.login();
+      final success = await authProvider.login();
+      
+      if (success) {
+        // Si el login fue exitoso, navegar a HomeView
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        }
+      }
     } else {
-      await authProvider.register();
+      // Intentar registrar usuario
+      final success = await authProvider.register();
+      
+      if (success) {
+        // Si el registro fue exitoso, cambiar al modo login y mostrar diálogo
+        _showRegistrationSuccessDialog(authProvider);
+      }
     }
   }
 
@@ -384,6 +398,74 @@ class _LoginViewState extends State<LoginView> {
                 ),
               ),
               child: Text(_localizations.send),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showRegistrationSuccessDialog(AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // No se puede cerrar tocando fuera
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: Colors.green[600],
+                size: 28,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Éxito', // _localizations.success,
+                style: TextStyle(
+                  color: Colors.green[700],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '¡Usuario creado exitosamente!', // _localizations.userCreatedSuccessfully,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Ahora puedes iniciar sesión con tus credenciales.', // _localizations.nowCanLogin,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Cambiar al modo login y limpiar campos
+                authProvider.toggleAuthMode();
+                // Limpiar el campo de email del login y poner el email registrado
+                authProvider.loginEmailController.text = authProvider.registerEmailController.text;
+                authProvider.loginPasswordController.clear();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text('Continuar al Login'), // _localizations.continueLogin),
             ),
           ],
         );

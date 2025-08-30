@@ -36,5 +36,9 @@
   "logout": "Ayuulüin",
   "logoutConfirm": "¿Ayuulirüin süchukua?",
   "comingSoon": "Kasachiki",
-  "user": "Wayuu"
+  "user": "Wayuu",
+  "success": "Asirü",
+  "userCreatedSuccessfully": "¡Wayuu ekaalü asirü!",
+  "nowCanLogin": "Jüshii achajüin süchukua süka.",
+  "continueLogin": "Achajüin süpüla"
 }

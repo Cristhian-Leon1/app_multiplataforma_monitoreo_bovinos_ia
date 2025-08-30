@@ -43,7 +43,9 @@ class HomeView extends StatelessWidget {
                               ),
                         ),
                         Text(
-                          userData?['name'] ?? localizations.user,
+                          userData?.perfil?.nombre ??
+                              userData?.email.split('@').first ??
+                              localizations.user,
                           style: Theme.of(context).textTheme.headlineMedium
                               ?.copyWith(
                                 color: Colors.white,

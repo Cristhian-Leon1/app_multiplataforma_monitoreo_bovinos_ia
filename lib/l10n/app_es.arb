@@ -147,5 +147,21 @@
   "user": "Usuario",
   "@user": {
     "description": "Usuario por defecto"
+  },
+  "success": "Éxito",
+  "@success": {
+    "description": "Mensaje de éxito"
+  },
+  "userCreatedSuccessfully": "¡Usuario creado exitosamente!",
+  "@userCreatedSuccessfully": {
+    "description": "Mensaje de usuario creado con éxito"
+  },
+  "nowCanLogin": "Ahora puedes iniciar sesión con tus credenciales.",
+  "@nowCanLogin": {
+    "description": "Mensaje indicando que puede iniciar sesión"
+  },
+  "continueLogin": "Continuar al Login",
+  "@continueLogin": {
+    "description": "Botón para continuar al formulario de login"
   }
 }
