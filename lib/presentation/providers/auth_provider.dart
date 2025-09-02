@@ -81,6 +81,10 @@ class AuthProvider extends ChangeNotifier {
         password: password,
       );
 
+      // Debug: Ver qué datos se están recibiendo
+      // print('DEBUG - Usuario recibido: ${tokenResponse.user.toJson()}');
+      // print('DEBUG - Perfil: ${tokenResponse.user.perfil?.toJson()}');
+
       // Guardar datos en storage local
       await StorageService.saveAccessToken(tokenResponse.accessToken);
       await StorageService.saveRefreshToken(tokenResponse.refreshToken);

@@ -13,6 +13,7 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    print('DEBUG - JSON del usuario: $json');
     return UserModel(
       id: json['id'] ?? '',
       email: json['email'] ?? '',
@@ -35,38 +36,21 @@ class UserModel {
 
 /// Modelo de perfil del usuario
 class PerfilModel {
-  final String? nombre;
-  final String? apellido;
-  final String? telefono;
-  final String? direccion;
-  final String? fechaNacimiento;
+  final String? nombreCompleto;
+  final String? imagenPerfil;
 
-  PerfilModel({
-    this.nombre,
-    this.apellido,
-    this.telefono,
-    this.direccion,
-    this.fechaNacimiento,
-  });
+  PerfilModel({this.nombreCompleto, this.imagenPerfil});
 
   factory PerfilModel.fromJson(Map<String, dynamic> json) {
+    print('DEBUG - JSON del perfil: $json');
     return PerfilModel(
-      nombre: json['nombre'],
-      apellido: json['apellido'],
-      telefono: json['telefono'],
-      direccion: json['direccion'],
-      fechaNacimiento: json['fecha_nacimiento'],
+      nombreCompleto: json['nombre_completo'],
+      imagenPerfil: json['imagen_perfil'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'nombre': nombre,
-      'apellido': apellido,
-      'telefono': telefono,
-      'direccion': direccion,
-      'fecha_nacimiento': fechaNacimiento,
-    };
+    return {'nombre_completo': nombreCompleto, 'imagen_perfil': imagenPerfil};
   }
 }
 
