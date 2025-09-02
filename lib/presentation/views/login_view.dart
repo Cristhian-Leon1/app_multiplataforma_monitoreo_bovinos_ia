@@ -82,7 +82,7 @@ class _LoginViewState extends State<LoginView> {
                       borderRadius: const BorderRadius.all(Radius.circular(20)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 20,
                           offset: const Offset(0, -10),
                         ),
@@ -371,13 +371,16 @@ class _LoginViewState extends State<LoginView> {
             ElevatedButton(
               onPressed: () async {
                 if (emailController.text.trim().isNotEmpty) {
-                  Navigator.of(context).pop();
-                  final success = await _authProvider.resetPassword(
-                    emailController.text.trim(),
-                  );
+                  final email = emailController.text.trim();
+                  final navigator = Navigator.of(context);
+                  final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+                  navigator.pop();
+
+                  final success = await _authProvider.resetPassword(email);
 
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    scaffoldMessenger.showSnackBar(
                       SnackBar(
                         content: Text(
                           success

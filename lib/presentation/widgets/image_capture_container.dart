@@ -20,11 +20,11 @@ class ImageCaptureContainer extends StatelessWidget {
       height: 200,
       decoration: BoxDecoration(
         color: image == null
-            ? const Color(0xFF4CAF50).withOpacity(0.1)
+            ? const Color(0xFF4CAF50).withValues(alpha: 0.1)
             : Colors.grey[100],
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: const Color(0xFF4CAF50).withOpacity(0.3),
+          color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -51,7 +51,7 @@ class ImageCaptureContainer extends StatelessWidget {
           Icon(
             Icons.camera_alt_outlined,
             size: 50,
-            color: const Color(0xFF2E7D32).withOpacity(0.7),
+            color: const Color(0xFF2E7D32).withValues(alpha: 0.7),
           ),
           const SizedBox(height: 10),
           Text(
@@ -89,7 +89,7 @@ class ImageCaptureContainer extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.transparent, Colors.black.withOpacity(0.3)],
+            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.3)],
           ),
         ),
         child: Align(
@@ -102,7 +102,10 @@ class ImageCaptureContainer extends StatelessWidget {
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 shadows: [
-                  Shadow(color: Colors.black.withOpacity(0.5), blurRadius: 2),
+                  Shadow(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    blurRadius: 2,
+                  ),
                 ],
               ),
             ),
@@ -117,7 +120,7 @@ class ImageCaptureContainer extends StatelessWidget {
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.5),
+        color: Colors.black.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(13),
       ),
       child: const Center(
@@ -153,12 +156,12 @@ class ActionButton extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: isEnabled
-              ? backgroundColor.withOpacity(0.9)
-              : Colors.grey.withOpacity(0.5),
+              ? backgroundColor.withValues(alpha: 0.9)
+              : Colors.grey.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

@@ -81,7 +81,7 @@ class _HomeViewState extends State<HomeView> {
               Text(
                 'Bienvenido',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                 ),
               ),
               Text(
@@ -96,7 +96,7 @@ class _HomeViewState extends State<HomeView> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(15),
             ),
             child: const Icon(Icons.person, color: Colors.white, size: 28),
@@ -154,7 +154,7 @@ class _HomeViewState extends State<HomeView> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -170,7 +170,7 @@ class _HomeViewState extends State<HomeView> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white.withOpacity(0.6),
+        unselectedItemColor: Colors.white.withValues(alpha: 0.6),
         selectedLabelStyle: const TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 12,
@@ -183,7 +183,7 @@ class _HomeViewState extends State<HomeView> {
               padding: const EdgeInsets.all(8),
               decoration: _currentIndex == 0
                   ? BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     )
                   : null,
@@ -196,7 +196,7 @@ class _HomeViewState extends State<HomeView> {
               padding: const EdgeInsets.all(8),
               decoration: _currentIndex == 1
                   ? BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     )
                   : null,
@@ -209,7 +209,7 @@ class _HomeViewState extends State<HomeView> {
               padding: const EdgeInsets.all(8),
               decoration: _currentIndex == 2
                   ? BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     )
                   : null,
@@ -522,9 +522,9 @@ class _HomeViewState extends State<HomeView> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -586,10 +586,10 @@ class _HomeViewState extends State<HomeView> {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF4CAF50).withOpacity(0.1),
+            color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(15),
             border: Border.all(
-              color: const Color(0xFF4CAF50).withOpacity(0.3),
+              color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -725,7 +725,7 @@ class _HomeViewState extends State<HomeView> {
       child: Container(
         padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -733,7 +733,7 @@ class _HomeViewState extends State<HomeView> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: const Color(0xFF2E7D32), size: 24),

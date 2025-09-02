@@ -13,7 +13,7 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    print('DEBUG - JSON del usuario: $json');
+    // DEBUG - JSON del usuario: $json
     return UserModel(
       id: json['id'] ?? '',
       email: json['email'] ?? '',
@@ -42,7 +42,7 @@ class PerfilModel {
   PerfilModel({this.nombreCompleto, this.imagenPerfil});
 
   factory PerfilModel.fromJson(Map<String, dynamic> json) {
-    print('DEBUG - JSON del perfil: $json');
+    // DEBUG - JSON del perfil: $json
     return PerfilModel(
       nombreCompleto: json['nombre_completo'],
       imagenPerfil: json['imagen_perfil'],

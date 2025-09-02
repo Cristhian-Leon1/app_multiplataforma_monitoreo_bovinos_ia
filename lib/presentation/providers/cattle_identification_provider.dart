@@ -103,30 +103,30 @@ class CattleIdentificationProvider extends ChangeNotifier {
       // En Android moderno, image_picker puede manejar los permisos automáticamente
       // Solo verificamos si podemos acceder, pero no bloqueamos si los permisos fallan
       if (Platform.isAndroid) {
-        print('DEBUG: Verificando permisos en Android');
+        // DEBUG: Verificando permisos en Android
 
         // Intentamos primero con photos (Android 13+)
         var photosStatus = await Permission.photos.status;
-        print('DEBUG: Estado Permission.photos: $photosStatus');
+        // DEBUG: Estado Permission.photos: $photosStatus
 
         if (photosStatus.isGranted) {
-          print('DEBUG: Permission.photos concedido');
+          // DEBUG: Permission.photos concedido
           return true;
         }
 
         // Intentamos con storage (Android 12 y anteriores)
         var storageStatus = await Permission.storage.status;
-        print('DEBUG: Estado Permission.storage: $storageStatus');
+        // DEBUG: Estado Permission.storage: $storageStatus
 
         if (storageStatus.isGranted) {
-          print('DEBUG: Permission.storage concedido');
+          // DEBUG: Permission.storage concedido
           return true;
         }
 
         // Si ninguno está concedido, intentamos solicitar photos primero
         if (photosStatus.isDenied) {
           final photosResult = await Permission.photos.request();
-          print('DEBUG: Resultado solicitud Permission.photos: $photosResult');
+          // DEBUG: Resultado solicitud Permission.photos: $photosResult
           if (photosResult.isGranted) {
             return true;
           }
@@ -135,9 +135,7 @@ class CattleIdentificationProvider extends ChangeNotifier {
         // Si photos falla, intentamos storage
         if (storageStatus.isDenied) {
           final storageResult = await Permission.storage.request();
-          print(
-            'DEBUG: Resultado solicitud Permission.storage: $storageResult',
-          );
+          // DEBUG: Resultado solicitud Permission.storage: $storageResult
           if (storageResult.isGranted) {
             return true;
           }
@@ -145,7 +143,7 @@ class CattleIdentificationProvider extends ChangeNotifier {
 
         // IMPORTANTE: Incluso si los permisos son denegados, permitimos continuar
         // porque image_picker puede tener acceso a través del selector de archivos del sistema
-        print('DEBUG: Permisos denegados, pero continuando con image_picker');
+        // DEBUG: Permisos denegados, pero continuando con image_picker
         return true; // Cambiado de false a true
       } else {
         // Para iOS
@@ -162,13 +160,11 @@ class CattleIdentificationProvider extends ChangeNotifier {
         }
 
         // En iOS también permitimos continuar
-        print(
-          'DEBUG: Permisos iOS denegados, pero continuando con image_picker',
-        );
+        // DEBUG: Permisos iOS denegados, pero continuando con image_picker
         return true;
       }
     } catch (e) {
-      print('DEBUG: Error en _checkGalleryPermission: $e');
+      // DEBUG: Error en _checkGalleryPermission: $e
       // Si hay algún error, permitimos continuar
       return true;
     }
@@ -205,12 +201,12 @@ class CattleIdentificationProvider extends ChangeNotifier {
 
   /// Capturar imagen lateral desde galería
   Future<void> captureLateralImageFromGallery() async {
-    print('DEBUG: Iniciando captura lateral desde galería');
+    // DEBUG: Iniciando captura lateral desde galería
     clearError();
 
     // Verificamos permisos pero continuamos incluso si no se conceden
     await _checkGalleryPermission();
-    print('DEBUG: Verificación de permisos completada, continuando con picker');
+    // DEBUG: Verificación de permisos completada, continuando con picker
 
     _setLoadingLateral(true);
 
@@ -220,19 +216,19 @@ class CattleIdentificationProvider extends ChangeNotifier {
         imageQuality: 80,
       );
 
-      print('DEBUG: Resultado del picker: ${image?.path}');
+      // DEBUG: Resultado del picker: ${image?.path}
 
       if (image != null) {
         _lateralImage = File(image.path);
-        print('DEBUG: Imagen lateral guardada: ${_lateralImage?.path}');
+        // DEBUG: Imagen lateral guardada: ${_lateralImage?.path}
         _setLoadingLateral(false);
         notifyListeners();
       } else {
-        print('DEBUG: Usuario canceló la selección');
+        // DEBUG: Usuario canceló la selección
         _setLoadingLateral(false);
       }
     } catch (e) {
-      print('DEBUG: Error en galería lateral: $e');
+      // DEBUG: Error en galería lateral: $e
       _setError('Error al seleccionar imagen lateral: ${e.toString()}');
     }
   }
@@ -268,12 +264,12 @@ class CattleIdentificationProvider extends ChangeNotifier {
 
   /// Capturar imagen trasera desde galería
   Future<void> captureRearImageFromGallery() async {
-    print('DEBUG: Iniciando captura trasera desde galería');
+    // DEBUG: Iniciando captura trasera desde galería
     clearError();
 
     // Verificamos permisos pero continuamos incluso si no se conceden
     await _checkGalleryPermission();
-    print('DEBUG: Verificación de permisos completada, continuando con picker');
+    // DEBUG: Verificación de permisos completada, continuando con picker
 
     _setLoadingRear(true);
 
@@ -283,19 +279,19 @@ class CattleIdentificationProvider extends ChangeNotifier {
         imageQuality: 80,
       );
 
-      print('DEBUG: Resultado del picker: ${image?.path}');
+      // DEBUG: Resultado del picker: ${image?.path}
 
       if (image != null) {
         _rearImage = File(image.path);
-        print('DEBUG: Imagen trasera guardada: ${_rearImage?.path}');
+        // DEBUG: Imagen trasera guardada: ${_rearImage?.path}
         _setLoadingRear(false);
         notifyListeners();
       } else {
-        print('DEBUG: Usuario canceló la selección');
+        // DEBUG: Usuario canceló la selección
         _setLoadingRear(false);
       }
     } catch (e) {
-      print('DEBUG: Error en galería trasera: $e');
+      // DEBUG: Error en galería trasera: $e
       _setError('Error al seleccionar imagen trasera: ${e.toString()}');
     }
   }

@@ -152,7 +152,7 @@ class AuthProvider extends ChangeNotifier {
       final hasActiveSession = await StorageService.hasActiveSession();
 
       if (!hasActiveSession) {
-        print('No hay sesión activa almacenada');
+        // DEBUG: No hay sesión activa almacenada
         return;
       }
 
@@ -169,26 +169,24 @@ class AuthProvider extends ChangeNotifier {
           _userToken = storedToken;
           _userData = storedUserData;
           _isLoggedIn = true;
-          print(
-            '✅ Sesión restaurada exitosamente para: ${storedUserData.email}',
-          );
+          // DEBUG: Sesión restaurada exitosamente para: ${storedUserData.email}
         } catch (e) {
-          print('❌ Error verificando token con backend: $e');
+          // DEBUG: Error verificando token con backend: $e
           // Token inválido o expirado, limpiar datos
           await _clearStoredAuthData();
-          print('🧹 Sesión limpiada debido a token inválido');
+          // DEBUG: Sesión limpiada debido a token inválido
         }
       } else {
-        print('⚠️ Datos de sesión incompletos, limpiando...');
+        // DEBUG: Datos de sesión incompletos, limpiando...
         await _clearStoredAuthData();
       }
     } catch (e) {
-      print('💥 Error inicializando autenticación: $e');
+      // DEBUG: Error inicializando autenticación: $e
       // En caso de error, limpiar datos para evitar estados inconsistentes
       try {
         await _clearStoredAuthData();
       } catch (clearError) {
-        print('🚨 Error adicional limpiando datos: $clearError');
+        // DEBUG: Error adicional limpiando datos: $clearError
       }
     } finally {
       _isInitialized = true;
@@ -213,7 +211,7 @@ class AuthProvider extends ChangeNotifier {
       }
     } catch (e) {
       // Si falla el logout en el servidor, continuar con logout local
-      print('Error al cerrar sesión en servidor: $e');
+      // DEBUG: Error al cerrar sesión en servidor: $e
     } finally {
       // Limpiar datos locales
       await StorageService.clearAuthData();
