@@ -79,7 +79,7 @@ class AppWrapper extends StatelessWidget {
           return const HomeView();
         }
 
-        // Si no está autenticado, comenzar con SplashView
+        // Si no está autenticado, mostrar LoginView directamente
         return const SplashView();
       },
     );

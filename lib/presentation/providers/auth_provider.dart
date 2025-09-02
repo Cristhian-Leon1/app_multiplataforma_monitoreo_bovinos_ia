@@ -96,6 +96,9 @@ class AuthProvider extends ChangeNotifier {
       _setToken(tokenResponse.accessToken);
       _isLoggedIn = true;
 
+      // Limpiar campos de login solo cuando el login sea exitoso
+      _clearLoginFields();
+
       return true;
     } catch (e) {
       _setError(e.toString().replaceFirst('Exception: ', ''));
@@ -198,12 +201,14 @@ class AuthProvider extends ChangeNotifier {
   Future<void> _clearStoredAuthData() async {
     await StorageService.clearAuthData();
     _isLoggedIn = false;
+
     _userToken = null;
     _userData = null;
+    notifyListeners();
   }
 
   // Cerrar sesión
-  Future<void> logout() async {
+  Future<void> logout({VoidCallback? onClearProviders}) async {
     try {
       // Llamar a la API de logout si hay token
       if (_userToken != null) {
@@ -216,9 +221,16 @@ class AuthProvider extends ChangeNotifier {
       // Limpiar datos locales
       await StorageService.clearAuthData();
       _isLoggedIn = false;
+      // print(_isLoggedIn); // DEBUG: confirmar logout
       _userToken = null;
       _userData = null;
       _clearError();
+
+      // Limpiar todos los providers si se proporciona el callback
+      if (onClearProviders != null) {
+        onClearProviders();
+      }
+
       notifyListeners();
     }
   }
@@ -311,6 +323,12 @@ class AuthProvider extends ChangeNotifier {
     _registerEmailController.clear();
     _registerPasswordController.clear();
     _registerConfirmPasswordController.clear();
+  }
+
+  // Método privado para limpiar solo campos de login
+  void _clearLoginFields() {
+    _loginEmailController.clear();
+    _loginPasswordController.clear();
   }
 
   // Actualizar datos del usuario

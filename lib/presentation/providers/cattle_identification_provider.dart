@@ -317,6 +317,18 @@ class CattleIdentificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Limpiar todos los datos del provider (para logout)
+  void clearAllData() {
+    _isLoadingLateral = false;
+    _isLoadingRear = false;
+    _isAnalyzing = false;
+    _errorMessage = null;
+    _lateralImage = null;
+    _rearImage = null;
+    _bovinoIdController.clear();
+    notifyListeners();
+  }
+
   /// Analizar bovino (lógica a implementar)
   Future<void> analyzeCattle() async {
     clearError();
