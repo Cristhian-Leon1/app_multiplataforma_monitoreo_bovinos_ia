@@ -7,6 +7,7 @@ import 'core/app_routes.dart';
 import 'core/constants.dart';
 import 'core/app_localizations.dart';
 import 'presentation/providers/auth_provider.dart';
+import 'presentation/providers/cattle_identification_provider.dart';
 import 'presentation/views/splash_view.dart';
 import 'presentation/views/login_view.dart';
 import 'presentation/views/home_view.dart';
@@ -26,7 +27,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => CattleIdentificationProvider()),
+      ],
       child: MaterialApp(
         title: AppConstants.appName,
         theme: AppTheme.lightTheme,

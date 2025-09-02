@@ -109,3 +109,73 @@ class _CustomTextFieldState extends State<CustomTextField> {
     );
   }
 }
+
+/// Widget reutilizable para el campo de Bovino ID
+class BovinoIdTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
+  final VoidCallback? onUnfocus;
+  final bool enabled;
+
+  const BovinoIdTextField({
+    super.key,
+    required this.controller,
+    this.validator,
+    this.onChanged,
+    this.onUnfocus,
+    this.enabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+      onFocusChange: (hasFocus) {
+        // Cuando el TextField pierde el foco, ejecutar el callback
+        if (!hasFocus && onUnfocus != null) {
+          onUnfocus!();
+        }
+      },
+      child: TextFormField(
+        controller: controller,
+        enabled: enabled,
+        textInputAction: TextInputAction.done,
+        decoration: InputDecoration(
+          labelText: 'Bovino ID',
+          hintText: 'Ingresa el identificador del bovino',
+          prefixIcon: const Icon(Icons.tag, color: Color(0xFF4CAF50)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red, width: 2),
+          ),
+          disabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey[200]!),
+          ),
+          filled: true,
+          fillColor: enabled ? Colors.grey[50] : Colors.grey[100],
+          labelStyle: TextStyle(color: Colors.black45),
+          hintStyle: TextStyle(color: Colors.grey[500]),
+        ),
+        validator: validator,
+        onChanged: onChanged,
+        onTapOutside: (event) {
+          // Remover el foco cuando se toca fuera del TextField
+          FocusScope.of(context).unfocus();
+        },
+      ),
+    );
+  }
+}
