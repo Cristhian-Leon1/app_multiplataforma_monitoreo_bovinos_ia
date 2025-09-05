@@ -19,6 +19,22 @@ class CattleIdentificationProvider extends ChangeNotifier {
   // Controller para el ID del bovino
   final TextEditingController _bovinoIdController = TextEditingController();
 
+  // Datos adicionales del bovino
+  String? _selectedSex;
+  String? _selectedBreed;
+
+  // Opciones para los dropdowns
+  final List<String> _sexOptions = ['Macho', 'Hembra'];
+  final List<String> _breedOptions = [
+    'Cebú',
+    'Pardo Suizo',
+    'Brahman Blanco',
+    'Girolando',
+    'Gyr',
+    'F-1',
+    'Holstein',
+  ];
+
   // Instancia del ImagePicker
   final ImagePicker _picker = ImagePicker();
 
@@ -32,12 +48,21 @@ class CattleIdentificationProvider extends ChangeNotifier {
   File? get rearImage => _rearImage;
   TextEditingController get bovinoIdController => _bovinoIdController;
 
+  // Getters para los dropdowns
+  String? get selectedSex => _selectedSex;
+  String? get selectedBreed => _selectedBreed;
+  List<String> get sexOptions => _sexOptions;
+  List<String> get breedOptions => _breedOptions;
+
   // Estado de las imágenes
   bool get hasLateralImage => _lateralImage != null;
   bool get hasRearImage => _rearImage != null;
   bool get hasAllImages => hasLateralImage && hasRearImage;
   bool get canAnalyze =>
-      hasAllImages && _bovinoIdController.text.trim().isNotEmpty;
+      hasAllImages &&
+      _bovinoIdController.text.trim().isNotEmpty &&
+      _selectedSex != null &&
+      _selectedBreed != null;
 
   /// Limpiar errores
   void clearError() {
@@ -313,6 +338,8 @@ class CattleIdentificationProvider extends ChangeNotifier {
     _lateralImage = null;
     _rearImage = null;
     _bovinoIdController.clear();
+    _selectedSex = null;
+    _selectedBreed = null;
     _errorMessage = null;
     notifyListeners();
   }
@@ -326,6 +353,22 @@ class CattleIdentificationProvider extends ChangeNotifier {
     _lateralImage = null;
     _rearImage = null;
     _bovinoIdController.clear();
+    _selectedSex = null;
+    _selectedBreed = null;
+    notifyListeners();
+  }
+
+  /// Cambiar sexo seleccionado
+  void setSex(String? sex) {
+    _selectedSex = sex;
+    clearError();
+    notifyListeners();
+  }
+
+  /// Cambiar raza seleccionada
+  void setBreed(String? breed) {
+    _selectedBreed = breed;
+    clearError();
     notifyListeners();
   }
 

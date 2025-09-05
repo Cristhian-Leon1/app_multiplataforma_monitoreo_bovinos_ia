@@ -189,7 +189,7 @@ class _HomeViewState extends State<HomeView> {
                   : null,
               child: const Icon(Icons.camera_alt, size: 24),
             ),
-            label: localizations.identifyCattle,
+            label: 'Caracterización',
           ),
           BottomNavigationBarItem(
             icon: Container(
@@ -202,7 +202,7 @@ class _HomeViewState extends State<HomeView> {
                   : null,
               child: const Icon(Icons.analytics, size: 24),
             ),
-            label: localizations.statistics,
+            label: 'Estadísticas',
           ),
           BottomNavigationBarItem(
             icon: Container(

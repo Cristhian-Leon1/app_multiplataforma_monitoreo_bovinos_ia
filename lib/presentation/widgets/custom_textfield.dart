@@ -179,3 +179,74 @@ class BovinoIdTextField extends StatelessWidget {
     );
   }
 }
+
+/// Widget personalizado para dropdowns
+class CustomDropdown extends StatelessWidget {
+  final String? value;
+  final List<String> items;
+  final String hint;
+  final Function(String?) onChanged;
+  final bool enabled;
+  final Widget? prefixIcon;
+
+  const CustomDropdown({
+    super.key,
+    required this.value,
+    required this.items,
+    required this.hint,
+    required this.onChanged,
+    this.enabled = true,
+    this.prefixIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          value: value,
+          items: items.map((String item) {
+            return DropdownMenuItem<String>(value: item, child: Text(item));
+          }).toList(),
+          onChanged: enabled ? onChanged : null,
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: prefixIcon,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[200]!),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+            fillColor: enabled ? Colors.white : Colors.grey[50],
+            filled: true,
+            hintStyle: TextStyle(color: Colors.grey[500]),
+          ),
+          style: TextStyle(
+            color: enabled ? Colors.black87 : Colors.grey[500],
+            fontSize: 16,
+          ),
+          icon: Icon(
+            Icons.keyboard_arrow_down,
+            color: enabled ? Colors.grey[600] : Colors.grey[400],
+          ),
+        ),
+      ],
+    );
+  }
+}

@@ -96,9 +96,6 @@ class AuthProvider extends ChangeNotifier {
       _setToken(tokenResponse.accessToken);
       _isLoggedIn = true;
 
-      // Limpiar campos de login solo cuando el login sea exitoso
-      _clearLoginFields();
-
       return true;
     } catch (e) {
       _setError(e.toString().replaceFirst('Exception: ', ''));
@@ -323,12 +320,6 @@ class AuthProvider extends ChangeNotifier {
     _registerEmailController.clear();
     _registerPasswordController.clear();
     _registerConfirmPasswordController.clear();
-  }
-
-  // Método privado para limpiar solo campos de login
-  void _clearLoginFields() {
-    _loginEmailController.clear();
-    _loginPasswordController.clear();
   }
 
   // Actualizar datos del usuario
