@@ -1,111 +1,190 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/statistics_provider.dart';
+import '../providers/auth_provider.dart';
+import '../widgets/finca_registration_widget.dart';
+import '../widgets/finca_stats_widget.dart';
 
-class StatisticsPage extends StatelessWidget {
+class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Frase descriptiva
-        Padding(
-          padding: const EdgeInsets.only(bottom: 30),
-          child: Text(
-            'Visualiza reportes y estadísticas detalladas de tu ganado para tomar mejores decisiones.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.grey[600],
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
+  State<StatisticsPage> createState() => _StatisticsPageState();
+}
 
-        // Contenido principal - Cards de estadísticas
-        Expanded(
-          child: GridView.count(
-            crossAxisCount: 2,
-            crossAxisSpacing: 15,
-            mainAxisSpacing: 15,
-            children: [
-              _buildStatsCard(
-                context,
-                icon: Icons.pets,
-                title: 'Total Bovinos',
-                value: '0',
-                color: const Color(0xFF4CAF50),
-              ),
-              _buildStatsCard(
-                context,
-                icon: Icons.health_and_safety,
-                title: 'Sanos',
-                value: '0',
-                color: const Color(0xFF2E7D32),
-              ),
-              _buildStatsCard(
-                context,
-                icon: Icons.warning,
-                title: 'En Alerta',
-                value: '0',
-                color: const Color(0xFF81C784),
-              ),
-              _buildStatsCard(
-                context,
-                icon: Icons.trending_up,
-                title: 'Análisis IA',
-                value: '0',
-                color: const Color(0xFF1B5E20),
-              ),
-            ],
-          ),
-        ),
-      ],
+class _StatisticsPageState extends State<StatisticsPage> {
+  Future<void> _handleFincaRegistration() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final statisticsProvider = Provider.of<StatisticsProvider>(
+      context,
+      listen: false,
     );
+
+    if (authProvider.userToken != null) {
+      final success = await statisticsProvider.createFinca(
+        authProvider.userToken!,
+      );
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Finca registrada exitosamente!'),
+            backgroundColor: Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
-  Widget _buildStatsCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(50),
+  Future<void> _handleFincaDeletion() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final statisticsProvider = Provider.of<StatisticsProvider>(
+      context,
+      listen: false,
+    );
+
+    if (authProvider.userToken != null) {
+      final success = await statisticsProvider.deleteFinca(
+        authProvider.userToken!,
+      );
+
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Finca eliminada exitosamente'),
+            backgroundColor: Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              statisticsProvider.errorMessage ?? 'Error al eliminar la finca',
             ),
-            child: Icon(icon, color: Colors.white, size: 30),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
-          const SizedBox(height: 15),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
+        );
+      }
+    }
+  }
+
+  Future<void> _refreshData() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final statisticsProvider = Provider.of<StatisticsProvider>(
+      context,
+      listen: false,
+    );
+
+    if (authProvider.userToken != null) {
+      await statisticsProvider.refreshData(authProvider.userToken!);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer2<StatisticsProvider, AuthProvider>(
+      builder: (context, statisticsProvider, authProvider, child) {
+        // Mostrar loading mientras se inicializa
+        if (statisticsProvider.isLoading) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Cargando datos...',
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return RefreshIndicator(
+          onRefresh: _refreshData,
+          color: const Color(0xFF4CAF50),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 7),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Frase descriptiva
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 30),
+                  child: Text(
+                    'Visualiza información relevante de tu ganado para tomar mejores decisiones.',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.grey[600],
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                // Mostrar errores si los hay
+                if (statisticsProvider.errorMessage != null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[300]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red[600]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            statisticsProvider.errorMessage!,
+                            style: TextStyle(color: Colors.red[700]),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: statisticsProvider.clearError,
+                          icon: Icon(Icons.close, color: Colors.red[600]),
+                          iconSize: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Contenido principal
+                if (!statisticsProvider.hasFincas)
+                  // Mostrar formulario de registro de finca
+                  FincaRegistrationWidget(
+                    controller: statisticsProvider.fincaNameController,
+                    validator: statisticsProvider.validateFincaName,
+                    onChanged: statisticsProvider.onFincaNameChanged,
+                    onRegister: _handleFincaRegistration,
+                    isLoading: statisticsProvider.isCreatingFinca,
+                  )
+                else
+                  // Mostrar estadísticas de la finca
+                  FincaStatsWidget(
+                    finca: statisticsProvider.selectedFinca!,
+                    totalBovinos: statisticsProvider.totalBovinos,
+                    bovinosSanos: statisticsProvider.bovinosSanos,
+                    bovinosAlerta: statisticsProvider.bovinosAlerta,
+                    analisisRealizados: statisticsProvider.analisisRealizados,
+                    onDeleteFinca: _handleFincaDeletion,
+                  ),
+
+                const SizedBox(height: 20),
+              ],
             ),
           ),
-          const SizedBox(height: 5),
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

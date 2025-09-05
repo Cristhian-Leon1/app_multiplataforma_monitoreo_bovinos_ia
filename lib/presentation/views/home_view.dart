@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/statistics_provider.dart';
 import '../../core/app_localizations.dart';
 import '../pages/cattle_identification_page.dart';
 import '../pages/statistics_page.dart';
@@ -15,6 +16,31 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   int _currentIndex = 0;
+  bool _hasInitializedStatistics = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializar datos después del primer frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeStatisticsData();
+    });
+  }
+
+  void _initializeStatisticsData() {
+    if (!_hasInitializedStatistics) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final statisticsProvider = Provider.of<StatisticsProvider>(
+        context,
+        listen: false,
+      );
+
+      if (authProvider.isLoggedIn && authProvider.userToken != null) {
+        statisticsProvider.initializeData(authProvider.userToken!);
+        _hasInitializedStatistics = true;
+      }
+    }
+  }
 
   // Método para obtener el nombre completo del usuario
   String _getUserDisplayName(AuthProvider authProvider) {

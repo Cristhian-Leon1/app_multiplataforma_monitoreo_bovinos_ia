@@ -8,6 +8,7 @@ import 'core/constants.dart';
 import 'core/app_localizations.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/cattle_identification_provider.dart';
+import 'presentation/providers/statistics_provider.dart';
 import 'presentation/views/splash_view.dart';
 import 'presentation/views/login_view.dart';
 import 'presentation/views/home_view.dart';
@@ -30,6 +31,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CattleIdentificationProvider()),
+        ChangeNotifierProvider(create: (_) => StatisticsProvider()),
       ],
       child: MaterialApp(
         title: AppConstants.appName,
