@@ -15,7 +15,7 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  int _currentIndex = 0;
+  int _currentIndex = 1;
   bool _hasInitializedStatistics = false;
 
   @override
@@ -39,6 +39,15 @@ class _HomeViewState extends State<HomeView> {
         statisticsProvider.initializeData(authProvider.userToken!);
         _hasInitializedStatistics = true;
       }
+    }
+  }
+
+  // Método público para cambiar de tab desde widgets hijos
+  void changeTab(int index) {
+    if (mounted) {
+      setState(() {
+        _currentIndex = index;
+      });
     }
   }
 
@@ -228,7 +237,7 @@ class _HomeViewState extends State<HomeView> {
                   : null,
               child: const Icon(Icons.analytics, size: 24),
             ),
-            label: 'Estadísticas',
+            label: 'Mi Finca',
           ),
           BottomNavigationBarItem(
             icon: Container(

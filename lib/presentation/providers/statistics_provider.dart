@@ -133,19 +133,20 @@ class StatisticsProvider extends ChangeNotifier {
       return false;
     }
 
-    print('DEBUG - Iniciando creación de finca: $fincaName');
-    print('DEBUG - Token disponible: ${userToken.isNotEmpty}');
-    print(
-      'DEBUG - Token preview: ${userToken.length > 10 ? userToken.substring(0, 10) + "..." : userToken}',
-    );
-
-    // Test de conectividad antes de crear finca
-    await ApiTestService.testFincaEndpoint(userToken);
-
+    // Mostrar loading inmediatamente después de las validaciones básicas
     _setCreatingFinca(true);
     clearError();
 
     try {
+      print('DEBUG - Iniciando creación de finca: $fincaName');
+      print('DEBUG - Token disponible: ${userToken.isNotEmpty}');
+      print(
+        'DEBUG - Token preview: ${userToken.length > 10 ? userToken.substring(0, 10) + "..." : userToken}',
+      );
+
+      // Test de conectividad antes de crear finca
+      await ApiTestService.testFincaEndpoint(userToken);
+
       final fincaData = FincaCreateDto(nombre: fincaName);
       print('DEBUG - Datos a enviar: ${fincaData.toJson()}');
 
@@ -171,6 +172,7 @@ class StatisticsProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       print('DEBUG - Error al crear finca: $e');
+      _setCreatingFinca(false); // Resetear estado de loading en caso de error
       _setError('Error al crear la finca: ${e.toString()}');
       return false;
     }
