@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../data/services/pose_service.dart';
+import '../../data/models/pose_model.dart';
 
 /// Provider para manejar la identificación de bovinos
 /// Gestiona la captura de imágenes, permisos y datos del formulario
@@ -15,6 +17,9 @@ class CattleIdentificationProvider extends ChangeNotifier {
   // Imágenes capturadas
   File? _lateralImage;
   File? _rearImage;
+
+  // Resultados de análisis de pose
+  List<PoseAnalysisResult>? _analysisResults;
 
   // Controller para el ID del bovino
   final TextEditingController _bovinoIdController = TextEditingController();
@@ -53,6 +58,9 @@ class CattleIdentificationProvider extends ChangeNotifier {
   String? get selectedBreed => _selectedBreed;
   List<String> get sexOptions => _sexOptions;
   List<String> get breedOptions => _breedOptions;
+
+  // Getter para resultados de análisis
+  List<PoseAnalysisResult>? get analysisResults => _analysisResults;
 
   // Estado de las imágenes
   bool get hasLateralImage => _lateralImage != null;
@@ -337,6 +345,7 @@ class CattleIdentificationProvider extends ChangeNotifier {
   void clearForm() {
     _lateralImage = null;
     _rearImage = null;
+    _analysisResults = null;
     _bovinoIdController.clear();
     _selectedSex = null;
     _selectedBreed = null;
@@ -352,6 +361,7 @@ class CattleIdentificationProvider extends ChangeNotifier {
     _errorMessage = null;
     _lateralImage = null;
     _rearImage = null;
+    _analysisResults = null;
     _bovinoIdController.clear();
     _selectedSex = null;
     _selectedBreed = null;
@@ -372,7 +382,7 @@ class CattleIdentificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Analizar bovino (lógica a implementar)
+  /// Analizar bovino con IA
   Future<void> analyzeCattle() async {
     clearError();
 
@@ -384,15 +394,42 @@ class CattleIdentificationProvider extends ChangeNotifier {
     _setAnalyzing(true);
 
     try {
-      // TODO: Implementar lógica de análisis con IA
-      // Aquí irá la llamada a la API de análisis de bovinos
+      final List<PoseAnalysisResult> results = [];
 
-      await Future.delayed(const Duration(seconds: 2)); // Simular procesamiento
+      // Analizar imagen lateral
+      if (_lateralImage != null) {
+        final (lateralPrediction, lateralImageBytes) =
+            await PoseService.analyzePose(_lateralImage!);
+        results.add(
+          PoseAnalysisResult(
+            imagePath: _lateralImage!.path,
+            prediction: lateralPrediction,
+            imageType: 'lateral',
+            resizedImageBytes: lateralImageBytes,
+          ),
+        );
+      }
 
+      // Analizar imagen posterior
+      if (_rearImage != null) {
+        final (rearPrediction, rearImageBytes) = await PoseService.analyzePose(
+          _rearImage!,
+        );
+        results.add(
+          PoseAnalysisResult(
+            imagePath: _rearImage!.path,
+            prediction: rearPrediction,
+            imageType: 'posterior',
+            resizedImageBytes: rearImageBytes,
+          ),
+        );
+      }
+
+      // Guardar resultados
+      _analysisResults = results;
       _setAnalyzing(false);
 
-      // Por ahora solo mostramos un mensaje de éxito
-      // En el futuro aquí se navegará a la pantalla de resultados
+      // Los resultados se mostrarán en la UI a través del getter analysisResults
     } catch (e) {
       _setError('Error al analizar bovino: ${e.toString()}');
     }

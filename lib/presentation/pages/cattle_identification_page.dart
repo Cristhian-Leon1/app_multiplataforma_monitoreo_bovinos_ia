@@ -4,6 +4,7 @@ import '../providers/cattle_identification_provider.dart';
 import '../providers/statistics_provider.dart';
 import '../widgets/image_capture_container.dart';
 import '../widgets/custom_textfield.dart';
+import '../widgets/pose_results_widget.dart';
 import '../views/home_view.dart';
 
 class CattleIdentificationPage extends StatelessWidget {
@@ -247,7 +248,7 @@ class CattleIdentificationPage extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed:
                     cattleProvider.canAnalyze && !cattleProvider.isAnalyzing
-                    ? cattleProvider.analyzeCattle
+                    ? () => _analyzeCattle(context, cattleProvider)
                     : null,
                 icon: cattleProvider.isAnalyzing
                     ? const SizedBox(
@@ -307,6 +308,33 @@ class CattleIdentificationPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Función para manejar el análisis de bovinos
+  Future<void> _analyzeCattle(
+    BuildContext context,
+    CattleIdentificationProvider cattleProvider,
+  ) async {
+    // Ejecutar el análisis
+    await cattleProvider.analyzeCattle();
+
+    // Si hay errores, no mostrar el dialog
+    if (cattleProvider.errorMessage != null) {
+      return;
+    }
+
+    // Si hay resultados, mostrar el dialog
+    if (cattleProvider.analysisResults != null &&
+        cattleProvider.analysisResults!.isNotEmpty) {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) =>
+              PoseResultsDialog(results: cattleProvider.analysisResults!),
+        );
+      }
+    }
   }
 }
 
