@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/pose_model.dart';
+import '../../data/models/bovino_model.dart';
 import '../providers/cattle_identification_provider.dart';
 import '../providers/statistics_provider.dart';
 import '../providers/auth_provider.dart';
@@ -611,7 +612,7 @@ class PoseResultsDialog extends StatelessWidget {
     );
   }
 
-  /// Manejar el registro del bovino
+  /// Manejar el registro del bovino con mediciones
   Future<void> _handleRegisterBovino(
     BuildContext context,
     CattleIdentificationProvider cattleProvider,
@@ -642,20 +643,35 @@ class PoseResultsDialog extends StatelessWidget {
         return;
       }
 
-      // Intentar registrar el bovino
-      final bovinoCreated = await cattleProvider.registerBovino(
+      // Intentar registrar el bovino con mediciones
+      final result = await cattleProvider.registerBovinoWithMediciones(
         token: authProvider.userToken!,
         fincaId: statisticsProvider.selectedFinca!.id,
       );
 
-      if (bovinoCreated != null) {
+      if (result != null) {
+        final bovino = result['bovino'] as BovinoModel;
+        final bovinoCreated = result['bovinoCreated'] as bool;
+        final medicionesCount = result['medicionesCount'] as int;
+
+        // Construir mensaje según lo que pasó
+        String message;
+        if (bovinoCreated) {
+          message = 'Bovino "${bovino.idBovino}" registrado exitosamente';
+        } else {
+          message = 'Se encontró bovino existente "${bovino.idBovino}"';
+        }
+
+        if (medicionesCount > 0) {
+          message += ' y se registraron $medicionesCount mediciones';
+        }
+
         // Éxito - Mostrar mensaje y cerrar diálogo
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Bovino "${bovinoCreated.idBovino}" registrado exitosamente',
-            ),
+            content: Text(message),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
           ),
         );
 

@@ -29,8 +29,8 @@ class BovinoService {
       // Validar datos antes de enviar
       final idBovino = (requestData['id_bovino']?.toString() ?? '').trim();
       final fincaId = (requestData['finca_id']?.toString() ?? '').trim();
-      final sexo = requestData['sexo']?.toString()?.trim();
-      final raza = requestData['raza']?.toString()?.trim();
+      final sexo = requestData['sexo']?.toString().trim();
+      final raza = requestData['raza']?.toString().trim();
 
       print('BovinoService - Validating data:');
       print('  - id_bovino: "$idBovino" (length: ${idBovino.length})');
@@ -286,6 +286,31 @@ class BovinoService {
       }
     } catch (e) {
       print('BovinoService - Error en searchBovinosByIdBovino: $e');
+      throw Exception('Error de conexión: ${e.toString()}');
+    }
+  }
+
+  /// Buscar un bovino específico por ID de bovino exacto
+  static Future<BovinoModel?> findBovinoByIdBovino({
+    required String token,
+    required String idBovino,
+  }) async {
+    try {
+      final bovinos = await searchBovinosByIdBovino(
+        token: token,
+        idBovino: idBovino,
+      );
+
+      // Buscar coincidencia exacta
+      for (final bovino in bovinos) {
+        if (bovino.idBovino == idBovino) {
+          return bovino;
+        }
+      }
+
+      return null; // No encontrado
+    } catch (e) {
+      print('BovinoService - Error en findBovinoByIdBovino: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }

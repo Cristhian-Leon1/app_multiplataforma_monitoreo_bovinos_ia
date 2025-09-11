@@ -4,8 +4,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../data/services/pose_service.dart';
 import '../../data/services/bovino_service.dart';
+import '../../data/services/medicion_service.dart';
 import '../../data/models/pose_model.dart';
 import '../../data/models/bovino_model.dart';
+import '../../data/models/medicion_model.dart';
 
 /// Provider para manejar la identificación de bovinos
 /// Gestiona la captura de imágenes, permisos y datos del formulario
@@ -535,8 +537,8 @@ class CattleIdentificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Registrar bovino en el backend
-  Future<BovinoModel?> registerBovino({
+  /// Registrar bovino y mediciones en el backend
+  Future<Map<String, dynamic>?> registerBovinoWithMediciones({
     required String token,
     required String fincaId,
   }) async {
@@ -553,27 +555,142 @@ class CattleIdentificationProvider extends ChangeNotifier {
     _setRegistering(true);
 
     try {
-      // Crear el DTO del bovino
-      final bovinoDto = BovinoCreateDto(
-        idBovino: _bovinoIdController.text.trim(),
-        fincaId: fincaId,
-        sexo: _selectedSex,
-        raza: _selectedBreed,
+      final idBovino = _bovinoIdController.text.trim();
+      BovinoModel? bovino;
+      bool bovinoCreated = false;
+
+      // 1. Verificar si el bovino ya existe
+      print('CattleProvider - Buscando bovino existente con ID: $idBovino');
+      bovino = await BovinoService.findBovinoByIdBovino(
+        token: token,
+        idBovino: idBovino,
       );
 
-      // Registrar en el backend
-      final bovinoCreated = await BovinoService.createBovino(
-        token: token,
-        bovinoData: bovinoDto,
-      );
+      if (bovino == null) {
+        // 2. El bovino no existe, crear uno nuevo
+        print('CattleProvider - Bovino no encontrado, creando nuevo bovino');
+        final bovinoDto = BovinoCreateDto(
+          idBovino: idBovino,
+          fincaId: fincaId,
+          sexo: _selectedSex,
+          raza: _selectedBreed,
+        );
+
+        bovino = await BovinoService.createBovino(
+          token: token,
+          bovinoData: bovinoDto,
+        );
+        bovinoCreated = true;
+        print('CattleProvider - Bovino creado exitosamente: ${bovino.id}');
+      } else {
+        print('CattleProvider - Bovino existente encontrado: ${bovino.id}');
+      }
+
+      // 3. Crear mediciones si hay datos morfométricos disponibles
+      final medicionesCreadas = await _createMediciones(token, bovino.id);
 
       _setRegistering(false);
 
-      return bovinoCreated;
+      return {
+        'bovino': bovino,
+        'bovinoCreated': bovinoCreated,
+        'medicionesCount': medicionesCreadas,
+      };
     } catch (e) {
+      print('CattleProvider - Error en registerBovinoWithMediciones: $e');
       _setError('Error al registrar bovino: ${e.toString()}');
       return null;
     }
+  }
+
+  /// Crear mediciones con los datos morfométricos calculados
+  Future<int> _createMediciones(String token, String bovinoUuid) async {
+    int medicionesCreadas = 0;
+    final fechaHoy = DateTime.now();
+
+    try {
+      // Solo crear medición si hay al menos un dato morfométrico
+      if (_altura != null ||
+          _longitudOblicua != null ||
+          _longitudCadera != null ||
+          _anchoCadera != null ||
+          _longitudTorso != null ||
+          _edadEstimada != null ||
+          _pesoEstimado != null) {
+        print('CattleProvider - Creando medición con datos:');
+        print('  - bovinoUuid: $bovinoUuid');
+
+        // Formatear decimales a máximo 6 dígitos totales (4 enteros + 2 decimales)
+        final alturaFormateada = _altura != null
+            ? double.parse(_altura!.toStringAsFixed(2))
+            : null;
+        final longitudOblicuaFormateada = _longitudOblicua != null
+            ? double.parse(_longitudOblicua!.toStringAsFixed(2))
+            : null;
+        final longitudCaderaFormateada = _longitudCadera != null
+            ? double.parse(_longitudCadera!.toStringAsFixed(2))
+            : null;
+        final anchoCaderaFormateada = _anchoCadera != null
+            ? double.parse(_anchoCadera!.toStringAsFixed(2))
+            : null;
+        final longitudTorsoFormateada = _longitudTorso != null
+            ? double.parse(_longitudTorso!.toStringAsFixed(2))
+            : null;
+        final pesoEstimadoFormateado = _pesoEstimado != null
+            ? double.parse(_pesoEstimado!.toStringAsFixed(2))
+            : null;
+
+        print('  - altura: $alturaFormateada');
+        print('  - longitudOblicua: $longitudOblicuaFormateada');
+        print('  - longitudCadera: $longitudCaderaFormateada');
+        print('  - anchoCadera: $anchoCaderaFormateada');
+        print('  - longitudTorso: $longitudTorsoFormateada');
+        print('  - edadEstimada: $_edadEstimada');
+        print('  - pesoEstimado: $pesoEstimadoFormateado');
+
+        final medicionDto = MedicionCreateDto(
+          bovinoId: bovinoUuid,
+          fecha: fechaHoy,
+          alturaCm: alturaFormateada,
+          lOblicuaCm: longitudOblicuaFormateada,
+          lCaderaCm: longitudCaderaFormateada,
+          aCaderaCm: anchoCaderaFormateada,
+          lTorsoCm: longitudTorsoFormateada,
+          edadMeses: _edadEstimada,
+          pesoBasculaKg: pesoEstimadoFormateado,
+        );
+
+        await MedicionService.createMedicion(
+          token: token,
+          medicionData: medicionDto,
+        );
+
+        medicionesCreadas = 1;
+        print('CattleProvider - Medición creada exitosamente');
+      } else {
+        print(
+          'CattleProvider - No hay datos morfométricos para crear medición',
+        );
+      }
+    } catch (e) {
+      print('CattleProvider - Error creando mediciones: $e');
+      // No lanzamos excepción aquí para no interrumpir el flujo principal
+      // El bovino ya fue creado/encontrado exitosamente
+    }
+
+    return medicionesCreadas;
+  }
+
+  /// Mantener función original para compatibilidad
+  Future<BovinoModel?> registerBovino({
+    required String token,
+    required String fincaId,
+  }) async {
+    final result = await registerBovinoWithMediciones(
+      token: token,
+      fincaId: fincaId,
+    );
+    return result?['bovino'] as BovinoModel?;
   }
 
   @override
