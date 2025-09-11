@@ -1,14 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:math';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import '../models/pose_model.dart';
 
 /// Servicio para el análisis de pose de bovinos
 class PoseService {
-  static const String _baseUrl = 'https://136a1de73b35.ngrok-free.app';
+  static const String _baseUrl = 'https://b1a6a03b000f.ngrok-free.app';
   static const String _predictEndpoint = '/predict/';
 
   static const Map<String, String> _headers = {
@@ -88,24 +87,14 @@ class PoseService {
         throw Exception('Error: Base64 vacío');
       }
 
-      print(
-        '✅ Base64 generado: ${base64Pure.substring(0, min(50, base64Pure.length))}...',
-      );
-      print('📏 Longitud base64: ${base64Pure.length} caracteres');
-
       // Crear el request con base64 puro
       final request = PoseAnalysisRequest(image: base64Pure);
 
       // Hacer la petición HTTP
       final response = await _makeRequest(request);
 
-      // Log para debug
-      print('Response status: ${response.statusCode}');
-
       if (response.statusCode == 200) {
-        print('✅ Análisis exitoso');
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        print('Response body: $responseData');
         final prediction = PosePredictionResponse.fromJson(responseData);
 
         // Devolver tanto la predicción como la imagen redimensionada
@@ -133,7 +122,6 @@ class PoseService {
   /// Función auxiliar para hacer la petición HTTP
   static Future<http.Response> _makeRequest(PoseAnalysisRequest request) async {
     final requestBody = jsonEncode(request.toJson());
-    print('📤 Enviando petición: ${requestBody.length} caracteres');
 
     return await http.post(
       Uri.parse('$_baseUrl$_predictEndpoint'),

@@ -1,18 +1,36 @@
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../data/models/pose_model.dart';
+import '../providers/cattle_identification_provider.dart';
+import '../providers/statistics_provider.dart';
+import '../providers/auth_provider.dart';
 
 /// Widget para mostrar imagen con keypoints dibujados
-class PoseResultImageWidget extends StatelessWidget {
+class PoseResultImageWidget extends StatefulWidget {
   final PoseAnalysisResult result;
 
   const PoseResultImageWidget({super.key, required this.result});
 
   @override
+  State<PoseResultImageWidget> createState() => _PoseResultImageWidgetState();
+}
+
+class _PoseResultImageWidgetState extends State<PoseResultImageWidget> {
+  bool _measuresCalculated = false;
+
+  Future<ui.Image> _loadImageFromBytes(Uint8List bytes) async {
+    final codec = await ui.instantiateImageCodec(bytes);
+    final frame = await codec.getNextFrame();
+    return frame.image;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<ui.Image>(
-      future: _loadImageFromBytes(result.resizedImageBytes),
+      future: _loadImageFromBytes(widget.result.resizedImageBytes),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -28,24 +46,98 @@ class PoseResultImageWidget extends StatelessWidget {
 
         final image = snapshot.data!;
 
-        return AspectRatio(
-          aspectRatio: image.width / image.height,
-          child: CustomPaint(
-            painter: KeypointsPainter(
-              image: image,
-              detections: result.prediction.detections,
-            ),
-            child: Container(),
-          ),
+        return Consumer<CattleIdentificationProvider>(
+          builder: (context, provider, child) {
+            // Calcular medidas morfométricas solo una vez
+            if (!_measuresCalculated) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _calculateMorphometricMeasures(provider);
+                _measuresCalculated = true;
+              });
+            }
+
+            return AspectRatio(
+              aspectRatio: image.width / image.height,
+              child: CustomPaint(
+                painter: KeypointsPainter(
+                  image: image,
+                  detections: widget.result.prediction.detections,
+                ),
+                child: Container(),
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  Future<ui.Image> _loadImageFromBytes(Uint8List bytes) async {
-    final codec = await ui.instantiateImageCodec(bytes);
-    final frame = await codec.getNextFrame();
-    return frame.image;
+  /// Calcular medidas morfométricas de forma segura
+  void _calculateMorphometricMeasures(CattleIdentificationProvider provider) {
+    for (final detection in widget.result.prediction.detections) {
+      final keypoints = detection.keypoints;
+
+      if (detection.className == 'bovino_lateral') {
+        // Mapeo de índices para bovino lateral:
+        // 0: C, 1: D, 2: B, 3: A, 4: G, 5: E, 6: F
+
+        if (keypoints.length >= 7) {
+          // Caso completo: tenemos todos los puntos A-G
+
+          // Calcular todas las distancias
+          final altura = _calculateDistance(keypoints[0], keypoints[1]); // C-D
+          final longitudOblicua = _calculateDistance(
+            keypoints[2],
+            keypoints[3],
+          ); // B-A
+          final longitudCadera = _calculateDistance(
+            keypoints[3],
+            keypoints[4],
+          ); // A-G
+          final longitudTorso = _calculateDistance(
+            keypoints[5],
+            keypoints[6],
+          ); // E-F
+
+          // Actualizar el provider
+          provider.updateMorphometricMeasures(
+            altura: altura,
+            longitudOblicua: longitudOblicua,
+            longitudCadera: longitudCadera,
+            longitudTorso: longitudTorso,
+            edadEstimada: 14,
+            pesoEstimado: 350.0,
+          );
+        } else if (keypoints.length >= 2) {
+          // Caso limitado: solo tenemos C y D
+          final anchoCadera = _calculateDistance(
+            keypoints[0],
+            keypoints[1],
+          ); // C-D
+
+          provider.updateMorphometricMeasures(anchoCadera: anchoCadera);
+        }
+      } else if (detection.className == 'bovino_posterior') {
+        // Mapeo de índices para bovino posterior:
+        // 0: H, 1: I
+
+        if (keypoints.length >= 2) {
+          final anchoCadera = _calculateDistance(
+            keypoints[0],
+            keypoints[1],
+          ); // H-I
+
+          provider.updateMorphometricMeasures(anchoCadera: anchoCadera);
+        }
+      }
+    }
+  }
+
+  /// Calcular distancia euclidiana entre dos keypoints
+  double _calculateDistance(Keypoint p1, Keypoint p2) {
+    final dx = p1.x - p2.x;
+    final dy = p1.y - p2.y;
+    return sqrt(dx * dx + dy * dy);
   }
 }
 
@@ -55,6 +147,17 @@ class KeypointsPainter extends CustomPainter {
   final List<PoseDetection> detections;
 
   KeypointsPainter({required this.image, required this.detections});
+
+  final List<String> keypointLabelsLateral = [
+    "C",
+    "D",
+    "B",
+    "A",
+    "G",
+    "E",
+    "F",
+  ];
+  final List<String> keypointLabelsPosterior = ["H", "I"];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -111,12 +214,29 @@ class KeypointsPainter extends CustomPainter {
       offsetX = (size.width - (image.width * scaleX)) / 2;
     }
 
+    // Dibujar líneas conectando keypoints si hay más de uno
+    if (detections.isNotEmpty) {
+      for (final detection in detections) {
+        if (detection.keypoints.length > 1) {
+          _drawKeypointConnections(
+            canvas,
+            detection.keypoints,
+            scaleX,
+            scaleY,
+            offsetX,
+            offsetY,
+            detection.className,
+          );
+        }
+      }
+    }
+
     for (final detection in detections) {
       for (int i = 0; i < detection.keypoints.length; i++) {
         final keypoint = detection.keypoints[i];
 
         // Solo dibujar keypoints con confianza alta
-        if (keypoint.confidence > 0.5) {
+        if (keypoint.confidence > 0.7) {
           // Las coordenadas vienen directamente de la imagen procesada
           // Solo necesitamos aplicar el factor de escala del widget
           final x = (keypoint.x * scaleX) + offsetX;
@@ -128,7 +248,9 @@ class KeypointsPainter extends CustomPainter {
 
           // Dibujar círculo para keypoint
           final paint = Paint()
-            ..color = _getKeypointColor(i)
+            ..color = detection.className == 'bovino_lateral'
+                ? _getKeypointColorLateral(i)
+                : _getKeypointColorPosterior(i)
             ..style = PaintingStyle.fill;
 
           canvas.drawCircle(Offset(clampedX, clampedY), 8.0, paint);
@@ -144,7 +266,9 @@ class KeypointsPainter extends CustomPainter {
           // Dibujar texto con índice del keypoint
           final textPainter = TextPainter(
             text: TextSpan(
-              text: '$i',
+              text: detection.className == 'bovino_lateral'
+                  ? keypointLabelsLateral[i]
+                  : keypointLabelsPosterior[i],
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -162,57 +286,6 @@ class KeypointsPainter extends CustomPainter {
               clampedY - textPainter.height / 2,
             ),
           );
-
-          // Dibujar información de confianza cerca del keypoint
-          final confidenceText = TextPainter(
-            text: TextSpan(
-              text: '${(keypoint.confidence * 100).round()}%',
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            textDirection: TextDirection.ltr,
-          );
-
-          confidenceText.layout();
-
-          // Dibujar fondo blanco para el texto de confianza
-          final confidenceBg = Paint()
-            ..color = Colors.white.withOpacity(0.8)
-            ..style = PaintingStyle.fill;
-
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(
-              Rect.fromLTWH(
-                clampedX + 12,
-                clampedY - 8,
-                confidenceText.width + 4,
-                confidenceText.height + 2,
-              ),
-              const Radius.circular(4),
-            ),
-            confidenceBg,
-          );
-
-          confidenceText.paint(canvas, Offset(clampedX + 14, clampedY - 7));
-        }
-      }
-    }
-
-    // Dibujar líneas conectando keypoints si hay más de uno
-    if (detections.isNotEmpty) {
-      for (final detection in detections) {
-        if (detection.keypoints.length > 1) {
-          _drawKeypointConnections(
-            canvas,
-            detection.keypoints,
-            scaleX,
-            scaleY,
-            offsetX,
-            offsetY,
-          );
         }
       }
     }
@@ -225,41 +298,81 @@ class KeypointsPainter extends CustomPainter {
     double scaleY,
     double offsetX,
     double offsetY,
+    String className,
   ) {
-    // Conectar keypoints secuencialmente
-    for (int i = 0; i < keypoints.length - 1; i++) {
-      final keypoint1 = keypoints[i];
-      final keypoint2 = keypoints[i + 1];
+    // Función auxiliar: convierte un keypoint a Offset
+    Offset toOffset(keypoint) {
+      return Offset(
+        (keypoint.x * scaleX) + offsetX,
+        (keypoint.y * scaleY) + offsetY,
+      );
+    }
 
-      // Solo dibujar líneas entre keypoints con confianza alta
-      if (keypoint1.confidence > 0.5 && keypoint2.confidence > 0.5) {
-        final x1 = (keypoint1.x * scaleX) + offsetX;
-        final y1 = (keypoint1.y * scaleY) + offsetY;
-        final x2 = (keypoint2.x * scaleX) + offsetX;
-        final y2 = (keypoint2.y * scaleY) + offsetY;
+    // Estilo de línea
+    final linePaint = Paint()
+      ..color = Colors.blue.withValues(alpha: 0.6)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
 
-        final linePaint = Paint()
-          ..color = Colors.blue.withOpacity(0.6)
-          ..strokeWidth = 2.0
-          ..style = PaintingStyle.stroke;
+    if (className == 'bovino_lateral') {
+      // Mapeo de índices para bovino lateral:
+      // 0: C, 1: D, 2: B, 3: A, 4: G, 5: E, 6: F
 
-        canvas.drawLine(Offset(x1, y1), Offset(x2, y2), linePaint);
+      if (keypoints.length >= 7) {
+        // Caso completo: tenemos todos los puntos A-G
+        final connections = [
+          [0, 1], // C-D (altura)
+          [2, 3], // B-A (longitud oblicua)
+          [3, 4], // A-G (longitud cadera)
+          [5, 6], // E-F (longitud torso)
+        ];
+
+        for (var pair in connections) {
+          final i1 = pair[0];
+          final i2 = pair[1];
+
+          if (i1 < keypoints.length && i2 < keypoints.length) {
+            final p1 = toOffset(keypoints[i1]);
+            final p2 = toOffset(keypoints[i2]);
+            canvas.drawLine(p1, p2, linePaint);
+          }
+        }
+      } else if (keypoints.length >= 2) {
+        // Caso limitado: solo tenemos C y D
+        final p1 = toOffset(keypoints[0]); // C
+        final p2 = toOffset(keypoints[1]); // D
+        canvas.drawLine(p1, p2, linePaint);
+      }
+    } else if (className == 'bovino_posterior') {
+      // Mapeo de índices para bovino posterior:
+      // 0: H, 1: I
+
+      if (keypoints.length >= 2) {
+        final p1 = toOffset(keypoints[0]); // H
+        final p2 = toOffset(keypoints[1]); // I
+        canvas.drawLine(p1, p2, linePaint);
       }
     }
   }
 
-  Color _getKeypointColor(int index) {
+  Color _getKeypointColorLateral(int index) {
     // Colores diferentes para cada keypoint
     final colors = [
-      Colors.red,
       Colors.blue,
-      Colors.green,
-      Colors.orange,
       Colors.purple,
+      Colors.orange,
       Colors.pink,
-      Colors.teal,
-      Colors.amber,
+      Colors.red,
+      Colors.yellow,
+      Colors.green,
     ];
+
+    return colors[index % colors.length];
+  }
+
+  Color _getKeypointColorPosterior(int index) {
+    // Colores diferentes para cada keypoint
+    final colors = [Colors.orange, Colors.blue];
 
     return colors[index % colors.length];
   }
@@ -274,15 +387,41 @@ class KeypointsPainter extends CustomPainter {
 class PoseResultsDialog extends StatelessWidget {
   final List<PoseAnalysisResult> results;
 
-  const PoseResultsDialog({super.key, required this.results});
+  PoseResultsDialog({super.key, required this.results});
+
+  final List<String> titlesResults = [
+    "ID de bovino",
+    "Sexo",
+    "Raza",
+    "Altura (D -> C)",
+    "Longitud oblicua (B -> A)",
+    "Longitud cadera (A -> G)",
+    "Ancho cadera (H -> I)",
+    "Longitud torso (E -> F)",
+    "Edad estimada",
+    "Peso estimado",
+  ];
 
   @override
   Widget build(BuildContext context) {
+    var analisisProvider = Provider.of<CattleIdentificationProvider>(context);
+
+    final List<String> identificationResults = [
+      analisisProvider.bovinoIdController.text,
+      analisisProvider.selectedSex ?? 'N/A',
+      analisisProvider.selectedBreed ?? 'N/A',
+      analisisProvider.altura?.toStringAsFixed(2) ?? 'N/A',
+      analisisProvider.longitudOblicua?.toStringAsFixed(2) ?? 'N/A',
+      analisisProvider.longitudCadera?.toStringAsFixed(2) ?? 'N/A',
+      analisisProvider.anchoCadera?.toStringAsFixed(2) ?? 'N/A',
+      analisisProvider.longitudTorso?.toStringAsFixed(2) ?? 'N/A',
+      analisisProvider.edadEstimada?.toString() ?? 'N/A',
+      analisisProvider.pesoEstimado?.toStringAsFixed(2) ?? 'N/A',
+    ];
+
     return Dialog(
       insetPadding: const EdgeInsets.all(16),
       child: Container(
-        width: double.infinity,
-        height: MediaQuery.of(context).size.height * 0.8,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,10 +430,13 @@ class PoseResultsDialog extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Resultados de Análisis',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Padding(
+                  padding: const EdgeInsets.only(left: 5),
+                  child: Text(
+                    'Resultados de Análisis',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -303,35 +445,100 @@ class PoseResultsDialog extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
             // Contenido con scroll
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (int i = 0; i < results.length; i++) ...[
                       _buildResultCard(context, results[i]),
-                      if (i < results.length - 1) const SizedBox(height: 16),
+                      const SizedBox(height: 10),
+                    ],
+                    for (int i = 0; i < titlesResults.length; i++) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(left: 5, top: 5),
+                        child: _buildTextResults(
+                          context: context,
+                          textTitle: "${titlesResults[i]}: ",
+                          textResult: i < identificationResults.length
+                              ? (i <= 2
+                                    ? identificationResults[i]
+                                    : i >= 3 && i <= 7
+                                    ? "${identificationResults[i]} ${i == 6 ? 'px' : 'px'}"
+                                    : i == 8
+                                    ? "${identificationResults[i]} meses"
+                                    : "${identificationResults[i]} kg")
+                              : "N/A",
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                     ],
                   ],
                 ),
               ),
             ),
 
-            // Botón de cerrar
+            // Botones de acción
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4CAF50),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Cerrar'),
-              ),
+            Consumer2<CattleIdentificationProvider, StatisticsProvider>(
+              builder: (context, cattleProvider, statisticsProvider, child) {
+                return Column(
+                  children: [
+                    // Botón de registrar datos
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: cattleProvider.isRegistering
+                            ? null
+                            : () => _handleRegisterBovino(
+                                context,
+                                cattleProvider,
+                                statisticsProvider,
+                              ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4CAF50),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: cattleProvider.isRegistering
+                            ? const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  Text('Registrando...'),
+                                ],
+                              )
+                            : const Text('Registrar Datos'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Botón de cerrar
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text(
+                          'Cerrar',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -360,9 +567,9 @@ class PoseResultsDialog extends StatelessWidget {
             // Imagen con keypoints
             Container(
               width: double.infinity,
-              height: 250,
+              height: 231,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: const Color(0xFF4CAF50)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ClipRRect(
@@ -370,87 +577,115 @@ class PoseResultsDialog extends StatelessWidget {
                 child: PoseResultImageWidget(result: result),
               ),
             ),
-            const SizedBox(height: 12),
-
-            // Información de detecciones
-            Text(
-              'Detecciones encontradas: ${result.prediction.detections.length}',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-
-            // Lista de detecciones
-            for (int i = 0; i < result.prediction.detections.length; i++) ...[
-              _buildDetectionInfo(context, result.prediction.detections[i], i),
-            ],
+            const SizedBox(height: 10),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDetectionInfo(
-    BuildContext context,
-    PoseDetection detection,
-    int index,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildTextResults({
+    required BuildContext context,
+    required String textTitle,
+    required String textResult,
+  }) {
+    return RichText(
+      text: TextSpan(
+        style: DefaultTextStyle.of(context).style,
         children: [
-          Text(
-            'Clase: ${detection.className}',
+          TextSpan(
+            text: textTitle,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          TextSpan(
+            text: textResult,
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Keypoints: ${detection.keypoints.length}',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 8),
-
-          // Lista de keypoints
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: [
-              for (int i = 0; i < detection.keypoints.length; i++) ...[
-                _buildKeypointChip(detection.keypoints[i], i),
-              ],
-            ],
+            ).textTheme.bodyMedium?.copyWith(fontSize: 16),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildKeypointChip(Keypoint keypoint, int index) {
-    final confidence = (keypoint.confidence * 100).round();
-    final color = confidence > 80
-        ? Colors.green
-        : confidence > 50
-        ? Colors.orange
-        : Colors.red;
+  /// Manejar el registro del bovino
+  Future<void> _handleRegisterBovino(
+    BuildContext context,
+    CattleIdentificationProvider cattleProvider,
+    StatisticsProvider statisticsProvider,
+  ) async {
+    try {
+      // Obtener el AuthProvider para el token
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-    return Chip(
-      label: Text(
-        'P$index: ${confidence}%',
-        style: const TextStyle(fontSize: 12),
-      ),
-      backgroundColor: color.withOpacity(0.1),
-      side: BorderSide(color: color),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
+      if (authProvider.userToken == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: No se encontró token de autenticación'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Verificar que haya una finca seleccionada
+      if (statisticsProvider.selectedFinca == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: Debe seleccionar una finca'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Intentar registrar el bovino
+      final bovinoCreated = await cattleProvider.registerBovino(
+        token: authProvider.userToken!,
+        fincaId: statisticsProvider.selectedFinca!.id,
+      );
+
+      if (bovinoCreated != null) {
+        // Éxito - Mostrar mensaje y cerrar diálogo
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Bovino "${bovinoCreated.idBovino}" registrado exitosamente',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Actualizar las estadísticas
+        await statisticsProvider.initializeData(authProvider.userToken!);
+
+        // Cerrar el diálogo
+        Navigator.of(context).pop();
+
+        // Limpiar el formulario para el siguiente bovino
+        cattleProvider.clearForm();
+      } else {
+        // Error - El mensaje ya fue manejado en el provider
+        // Solo mostrar el error si hay uno
+        if (cattleProvider.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(cattleProvider.errorMessage!),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error inesperado: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

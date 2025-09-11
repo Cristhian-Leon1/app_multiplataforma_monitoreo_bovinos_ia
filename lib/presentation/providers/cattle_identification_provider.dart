@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../data/services/pose_service.dart';
+import '../../data/services/bovino_service.dart';
 import '../../data/models/pose_model.dart';
+import '../../data/models/bovino_model.dart';
 
 /// Provider para manejar la identificación de bovinos
 /// Gestiona la captura de imágenes, permisos y datos del formulario
@@ -12,6 +14,7 @@ class CattleIdentificationProvider extends ChangeNotifier {
   bool _isLoadingLateral = false;
   bool _isLoadingRear = false;
   bool _isAnalyzing = false;
+  bool _isRegistering = false;
   String? _errorMessage;
 
   // Imágenes capturadas
@@ -27,6 +30,13 @@ class CattleIdentificationProvider extends ChangeNotifier {
   // Datos adicionales del bovino
   String? _selectedSex;
   String? _selectedBreed;
+  double? _altura;
+  double? _longitudOblicua;
+  double? _longitudCadera;
+  double? _anchoCadera;
+  double? _longitudTorso;
+  int? _edadEstimada;
+  double? _pesoEstimado;
 
   // Opciones para los dropdowns
   final List<String> _sexOptions = ['Macho', 'Hembra'];
@@ -47,7 +57,9 @@ class CattleIdentificationProvider extends ChangeNotifier {
   bool get isLoadingLateral => _isLoadingLateral;
   bool get isLoadingRear => _isLoadingRear;
   bool get isAnalyzing => _isAnalyzing;
-  bool get isLoading => _isLoadingLateral || _isLoadingRear || _isAnalyzing;
+  bool get isRegistering => _isRegistering;
+  bool get isLoading =>
+      _isLoadingLateral || _isLoadingRear || _isAnalyzing || _isRegistering;
   String? get errorMessage => _errorMessage;
   File? get lateralImage => _lateralImage;
   File? get rearImage => _rearImage;
@@ -58,6 +70,15 @@ class CattleIdentificationProvider extends ChangeNotifier {
   String? get selectedBreed => _selectedBreed;
   List<String> get sexOptions => _sexOptions;
   List<String> get breedOptions => _breedOptions;
+
+  // Getters para medidas morfométricas
+  double? get altura => _altura;
+  double? get longitudOblicua => _longitudOblicua;
+  double? get longitudCadera => _longitudCadera;
+  double? get anchoCadera => _anchoCadera;
+  double? get longitudTorso => _longitudTorso;
+  int? get edadEstimada => _edadEstimada;
+  double? get pesoEstimado => _pesoEstimado;
 
   // Getter para resultados de análisis
   List<PoseAnalysisResult>? get analysisResults => _analysisResults;
@@ -98,12 +119,19 @@ class CattleIdentificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Establecer estado de registro
+  void _setRegistering(bool registering) {
+    _isRegistering = registering;
+    notifyListeners();
+  }
+
   /// Establecer error
   void _setError(String error) {
     _errorMessage = error;
     _isLoadingLateral = false;
     _isLoadingRear = false;
     _isAnalyzing = false;
+    _isRegistering = false;
     notifyListeners();
   }
 
@@ -349,6 +377,13 @@ class CattleIdentificationProvider extends ChangeNotifier {
     _bovinoIdController.clear();
     _selectedSex = null;
     _selectedBreed = null;
+    _altura = null;
+    _longitudOblicua = null;
+    _longitudCadera = null;
+    _anchoCadera = null;
+    _longitudTorso = null;
+    _edadEstimada = null;
+    _pesoEstimado = null;
     _errorMessage = null;
     notifyListeners();
   }
@@ -358,6 +393,7 @@ class CattleIdentificationProvider extends ChangeNotifier {
     _isLoadingLateral = false;
     _isLoadingRear = false;
     _isAnalyzing = false;
+    _isRegistering = false;
     _errorMessage = null;
     _lateralImage = null;
     _rearImage = null;
@@ -365,6 +401,13 @@ class CattleIdentificationProvider extends ChangeNotifier {
     _bovinoIdController.clear();
     _selectedSex = null;
     _selectedBreed = null;
+    _altura = null;
+    _longitudOblicua = null;
+    _longitudCadera = null;
+    _anchoCadera = null;
+    _longitudTorso = null;
+    _edadEstimada = null;
+    _pesoEstimado = null;
     notifyListeners();
   }
 
@@ -379,6 +422,27 @@ class CattleIdentificationProvider extends ChangeNotifier {
   void setBreed(String? breed) {
     _selectedBreed = breed;
     clearError();
+    notifyListeners();
+  }
+
+  /// Actualizar medidas morfométricas
+  void updateMorphometricMeasures({
+    double? altura,
+    double? longitudOblicua,
+    double? longitudCadera,
+    double? anchoCadera,
+    double? longitudTorso,
+    int? edadEstimada,
+    double? pesoEstimado,
+  }) {
+    if (altura != null) _altura = altura;
+    if (longitudOblicua != null) _longitudOblicua = longitudOblicua;
+    if (longitudCadera != null) _longitudCadera = longitudCadera;
+    if (anchoCadera != null) _anchoCadera = anchoCadera;
+    if (longitudTorso != null) _longitudTorso = longitudTorso;
+    if (edadEstimada != null) _edadEstimada = edadEstimada;
+    if (pesoEstimado != null) _pesoEstimado = pesoEstimado;
+
     notifyListeners();
   }
 
@@ -469,6 +533,47 @@ class CattleIdentificationProvider extends ChangeNotifier {
 
     // Notificar cambios para actualizar el estado de canAnalyze
     notifyListeners();
+  }
+
+  /// Registrar bovino en el backend
+  Future<BovinoModel?> registerBovino({
+    required String token,
+    required String fincaId,
+  }) async {
+    clearError();
+
+    // Validar que todos los datos necesarios están presentes
+    if (_bovinoIdController.text.trim().isEmpty ||
+        _selectedSex == null ||
+        _selectedBreed == null) {
+      _setError('Por favor, completa todos los campos requeridos.');
+      return null;
+    }
+
+    _setRegistering(true);
+
+    try {
+      // Crear el DTO del bovino
+      final bovinoDto = BovinoCreateDto(
+        idBovino: _bovinoIdController.text.trim(),
+        fincaId: fincaId,
+        sexo: _selectedSex,
+        raza: _selectedBreed,
+      );
+
+      // Registrar en el backend
+      final bovinoCreated = await BovinoService.createBovino(
+        token: token,
+        bovinoData: bovinoDto,
+      );
+
+      _setRegistering(false);
+
+      return bovinoCreated;
+    } catch (e) {
+      _setError('Error al registrar bovino: ${e.toString()}');
+      return null;
+    }
   }
 
   @override

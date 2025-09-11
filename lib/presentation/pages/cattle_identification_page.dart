@@ -85,7 +85,7 @@ class CattleIdentificationPage extends StatelessWidget {
       child: SingleChildScrollView(
         // Agregar scroll para evitar overflow
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.symmetric(horizontal: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
