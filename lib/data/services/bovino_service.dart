@@ -17,26 +17,12 @@ class BovinoService {
   }) async {
     try {
       final requestData = bovinoData.toJson();
-      print(
-        'BovinoService - Sending request to: ${AppConstants.apiBaseUrl}/bovinos/',
-      );
-      print('BovinoService - Request data: $requestData');
-      print('BovinoService - Request body: ${jsonEncode(requestData)}');
-      print(
-        'BovinoService - Token (first 20 chars): ${token.substring(0, 20)}...',
-      );
 
       // Validar datos antes de enviar
       final idBovino = (requestData['id_bovino']?.toString() ?? '').trim();
       final fincaId = (requestData['finca_id']?.toString() ?? '').trim();
       final sexo = requestData['sexo']?.toString().trim();
       final raza = requestData['raza']?.toString().trim();
-
-      print('BovinoService - Validating data:');
-      print('  - id_bovino: "$idBovino" (length: ${idBovino.length})');
-      print('  - finca_id: "$fincaId" (length: ${fincaId.length})');
-      print('  - sexo: "$sexo"');
-      print('  - raza: "$raza"');
 
       if (idBovino.isEmpty) {
         throw Exception('id_bovino es requerido');
@@ -77,10 +63,6 @@ class BovinoService {
         body: jsonEncode(bovinoData.toJson()),
       );
 
-      print('BovinoService - Response status: ${response.statusCode}');
-      print('BovinoService - Response headers: ${response.headers}');
-      print('BovinoService - Response body: ${response.body}');
-
       if (response.statusCode == 201) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         return BovinoModel.fromJson(responseData);
@@ -93,10 +75,7 @@ class BovinoService {
               'UUID is not JSON serializable',
             )) {
           // El bovino probablemente se creó correctamente, pero hay problema con la respuesta
-          // Crear un modelo temporal con los datos que enviamos
-          print(
-            'BovinoService - Bovino creado pero error en serialización de respuesta',
-          );
+
           return BovinoModel(
             id: 'temp_id', // ID temporal
             idBovino: bovinoData.idBovino,
@@ -113,7 +92,6 @@ class BovinoService {
         throw Exception(errorData['detail'] ?? 'Error al crear bovino');
       }
     } catch (e) {
-      print('BovinoService - Error en createBovino: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -129,9 +107,6 @@ class BovinoService {
         headers: {..._headers, 'Authorization': 'Bearer $token'},
       );
 
-      print('BovinoService - Response status: ${response.statusCode}');
-      print('BovinoService - Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final List<dynamic> responseData = jsonDecode(response.body);
         return responseData
@@ -142,7 +117,6 @@ class BovinoService {
         throw Exception(errorData['detail'] ?? 'Error al obtener bovinos');
       }
     } catch (e) {
-      print('BovinoService - Error en getBovinosByFinca: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -158,9 +132,6 @@ class BovinoService {
         headers: {..._headers, 'Authorization': 'Bearer $token'},
       );
 
-      print('BovinoService - Response status: ${response.statusCode}');
-      print('BovinoService - Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         return BovinoModel.fromJson(responseData);
@@ -169,7 +140,6 @@ class BovinoService {
         throw Exception(errorData['detail'] ?? 'Error al obtener bovino');
       }
     } catch (e) {
-      print('BovinoService - Error en getBovinoById: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -187,9 +157,6 @@ class BovinoService {
         body: jsonEncode(bovinoData.toJson()),
       );
 
-      print('BovinoService - Response status: ${response.statusCode}');
-      print('BovinoService - Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         return BovinoModel.fromJson(responseData);
@@ -198,7 +165,6 @@ class BovinoService {
         throw Exception(errorData['detail'] ?? 'Error al actualizar bovino');
       }
     } catch (e) {
-      print('BovinoService - Error en updateBovino: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -214,8 +180,6 @@ class BovinoService {
         headers: {..._headers, 'Authorization': 'Bearer $token'},
       );
 
-      print('BovinoService - Response status: ${response.statusCode}');
-
       if (response.statusCode == 204) {
         return true;
       } else {
@@ -223,7 +187,6 @@ class BovinoService {
         throw Exception(errorData['detail'] ?? 'Error al eliminar bovino');
       }
     } catch (e) {
-      print('BovinoService - Error en deleteBovino: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -241,9 +204,6 @@ class BovinoService {
         headers: {..._headers, 'Authorization': 'Bearer $token'},
       );
 
-      print('BovinoService - Response status: ${response.statusCode}');
-      print('BovinoService - Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         return BovinoWithMedicionesModel.fromJson(responseData);
@@ -254,7 +214,6 @@ class BovinoService {
         );
       }
     } catch (e) {
-      print('BovinoService - Error en getBovinoWithMediciones: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -272,9 +231,6 @@ class BovinoService {
         headers: {..._headers, 'Authorization': 'Bearer $token'},
       );
 
-      print('BovinoService - Response status: ${response.statusCode}');
-      print('BovinoService - Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final List<dynamic> responseData = jsonDecode(response.body);
         return responseData
@@ -285,7 +241,6 @@ class BovinoService {
         throw Exception(errorData['detail'] ?? 'Error al buscar bovinos');
       }
     } catch (e) {
-      print('BovinoService - Error en searchBovinosByIdBovino: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -310,7 +265,6 @@ class BovinoService {
 
       return null; // No encontrado
     } catch (e) {
-      print('BovinoService - Error en findBovinoByIdBovino: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }

@@ -1,8 +1,10 @@
+import 'package:app_multiplataforma_monitoreo_bovinos_ia/presentation/widgets/card_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/statistics_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/finca_registration_widget.dart';
+import '../widgets/statistics_charts_widget.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
@@ -325,8 +327,18 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       ),
                     ),
 
-                  // Grid de estadísticas
-                  _buildStatsGrid(context, statisticsProvider),
+                  CardHorizontal(
+                    icon: Icons.pets,
+                    title: 'Cantidad de bovinos en la finca',
+                    value: statisticsProvider.totalBovinos.toString(),
+                    color: const Color(0xFF4CAF50),
+                  ),
+
+                  // Gráficas de distribución
+                  StatisticsChartsWidget(
+                    totalRazas: statisticsProvider.totalRazas,
+                    totalSexos: statisticsProvider.totalSexos,
+                  ),
 
                   const SizedBox(height: 20),
                 ],
@@ -335,104 +347,6 @@ class _StatisticsPageState extends State<StatisticsPage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildStatsGrid(
-    BuildContext context,
-    StatisticsProvider statisticsProvider,
-  ) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 15,
-      mainAxisSpacing: 15,
-      children: [
-        _buildStatsCard(
-          context,
-          icon: Icons.pets,
-          title: 'Total\nBovinos',
-          value: statisticsProvider.totalBovinos.toString(),
-          color: const Color(0xFF4CAF50),
-        ),
-        _buildStatsCard(
-          context,
-          icon: Icons.favorite,
-          title: 'Bovinos\nSanos',
-          value: statisticsProvider.bovinosSanos.toString(),
-          color: const Color(0xFF2196F3),
-        ),
-        _buildStatsCard(
-          context,
-          icon: Icons.warning,
-          title: 'Bovinos en\nAlerta',
-          value: statisticsProvider.bovinosAlerta.toString(),
-          color: const Color(0xFFF44336),
-        ),
-        _buildStatsCard(
-          context,
-          icon: Icons.analytics,
-          title: 'Análisis\nRealizados',
-          value: statisticsProvider.analisisRealizados.toString(),
-          color: const Color(0xFF9C27B0),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Icon(icon, color: Colors.white, size: 30),
-          ),
-          const SizedBox(height: 15),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
     );
   }
 

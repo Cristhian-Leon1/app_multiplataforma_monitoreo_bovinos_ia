@@ -246,7 +246,6 @@ class AuthProvider extends ChangeNotifier {
       // Simular llamada a API
       await Future.delayed(const Duration(seconds: 2));
 
-      // TODO: Implementar lógica real de recuperación
       return true;
     } catch (e) {
       _setError('Error al enviar correo de recuperación: ${e.toString()}');

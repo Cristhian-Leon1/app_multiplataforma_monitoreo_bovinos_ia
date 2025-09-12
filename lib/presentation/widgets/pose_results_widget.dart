@@ -667,26 +667,30 @@ class PoseResultsDialog extends StatelessWidget {
         }
 
         // Éxito - Mostrar mensaje y cerrar diálogo
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
 
         // Actualizar las estadísticas
         await statisticsProvider.initializeData(authProvider.userToken!);
 
         // Cerrar el diálogo
-        Navigator.of(context).pop();
+        if (context.mounted) {
+          Navigator.of(context).pop();
+        }
 
         // Limpiar el formulario para el siguiente bovino
         cattleProvider.clearForm();
       } else {
         // Error - El mensaje ya fue manejado en el provider
         // Solo mostrar el error si hay uno
-        if (cattleProvider.errorMessage != null) {
+        if (cattleProvider.errorMessage != null && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(cattleProvider.errorMessage!),
@@ -696,12 +700,14 @@ class PoseResultsDialog extends StatelessWidget {
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error inesperado: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error inesperado: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

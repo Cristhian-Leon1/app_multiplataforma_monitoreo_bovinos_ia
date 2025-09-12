@@ -17,30 +17,16 @@ class MedicionService {
   }) async {
     try {
       final jsonData = medicionData.toJson();
-      print('MedicionService - Enviando datos de medición:');
-      print('MedicionService - JSON completo: ${jsonEncode(jsonData)}');
-
-      print('MedicionService - Intentando crear medición...');
-
       final response = await http.post(
         Uri.parse('${AppConstants.apiBaseUrl}/mediciones/'),
         headers: {..._headers, 'Authorization': 'Bearer $token'},
         body: jsonEncode(jsonData),
       );
-
-      print('MedicionService - Create Response status: ${response.statusCode}');
-      print('MedicionService - Create Response body: ${response.body}');
-
       if (response.statusCode == 201) {
         try {
           final Map<String, dynamic> responseData = jsonDecode(response.body);
           return MedicionModel.fromJson(responseData);
         } catch (e) {
-          // Si hay problema deserializando la respuesta pero el status es 201,
-          // asumimos que la medición se creó correctamente
-          print(
-            'MedicionService - Problema deserializando respuesta, pero status 201: $e',
-          );
           // Creamos un modelo mock con los datos mínimos
           return MedicionModel(
             id: 'temp-id',
@@ -59,17 +45,14 @@ class MedicionService {
       } else {
         try {
           final errorData = jsonDecode(response.body);
-          print('MedicionService - Error response: $errorData');
           throw Exception(errorData['detail'] ?? 'Error al crear medición');
         } catch (e) {
-          print('MedicionService - Error parsing error response: $e');
           throw Exception(
             'Error al crear medición - Status: ${response.statusCode}',
           );
         }
       }
     } catch (e) {
-      print('MedicionService - Error en createMedicion: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -84,10 +67,6 @@ class MedicionService {
         Uri.parse('${AppConstants.apiBaseUrl}/mediciones/bovino/$bovinoId'),
         headers: {..._headers, 'Authorization': 'Bearer $token'},
       );
-
-      print('MedicionService - Get Response status: ${response.statusCode}');
-      print('MedicionService - Get Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final List<dynamic> responseData = jsonDecode(response.body);
         return responseData
@@ -98,7 +77,6 @@ class MedicionService {
         throw Exception(errorData['detail'] ?? 'Error al obtener mediciones');
       }
     } catch (e) {
-      print('MedicionService - Error en getMedicionesByBovino: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -113,12 +91,6 @@ class MedicionService {
         Uri.parse('${AppConstants.apiBaseUrl}/mediciones/$medicionId'),
         headers: {..._headers, 'Authorization': 'Bearer $token'},
       );
-
-      print(
-        'MedicionService - GetById Response status: ${response.statusCode}',
-      );
-      print('MedicionService - GetById Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         return MedicionModel.fromJson(responseData);
@@ -127,7 +99,6 @@ class MedicionService {
         throw Exception(errorData['detail'] ?? 'Error al obtener medición');
       }
     } catch (e) {
-      print('MedicionService - Error en getMedicionById: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -145,9 +116,6 @@ class MedicionService {
         body: jsonEncode(medicionData.toJson()),
       );
 
-      print('MedicionService - Update Response status: ${response.statusCode}');
-      print('MedicionService - Update Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         return MedicionModel.fromJson(responseData);
@@ -156,7 +124,6 @@ class MedicionService {
         throw Exception(errorData['detail'] ?? 'Error al actualizar medición');
       }
     } catch (e) {
-      print('MedicionService - Error en updateMedicion: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -172,8 +139,6 @@ class MedicionService {
         headers: {..._headers, 'Authorization': 'Bearer $token'},
       );
 
-      print('MedicionService - Delete Response status: ${response.statusCode}');
-
       if (response.statusCode == 204) {
         return true;
       } else {
@@ -181,7 +146,6 @@ class MedicionService {
         throw Exception(errorData['detail'] ?? 'Error al eliminar medición');
       }
     } catch (e) {
-      print('MedicionService - Error en deleteMedicion: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
@@ -198,12 +162,6 @@ class MedicionService {
         ),
         headers: {..._headers, 'Authorization': 'Bearer $token'},
       );
-
-      print(
-        'MedicionService - GetUltima Response status: ${response.statusCode}',
-      );
-      print('MedicionService - GetUltima Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         return MedicionModel.fromJson(responseData);
@@ -214,7 +172,6 @@ class MedicionService {
         );
       }
     } catch (e) {
-      print('MedicionService - Error en getUltimaMedicionBovino: $e');
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }

@@ -1,0 +1,346 @@
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+
+class StatisticsChartsWidget extends StatelessWidget {
+  final Map<String, int> totalRazas;
+  final Map<String, int> totalSexos;
+
+  const StatisticsChartsWidget({
+    super.key,
+    required this.totalRazas,
+    required this.totalSexos,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Si no hay datos, no mostrar las gráficas
+    if (totalRazas.isEmpty && totalSexos.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      children: [
+        // Título de sección
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20.0),
+          child: Text(
+            'Distribución de Bovinos',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: const Color(0xFF2E7D32),
+            ),
+          ),
+        ),
+
+        // Gráfica de Razas
+        if (totalRazas.isNotEmpty) ...[
+          _buildChartContainer(
+            context,
+            title: 'Distribución por Razas',
+            icon: Icons.category,
+            chart: _buildRazasChart(context),
+          ),
+          const SizedBox(height: 24),
+        ],
+
+        // Gráfica de Sexos
+        if (totalSexos.isNotEmpty) ...[
+          _buildChartContainer(
+            context,
+            title: 'Distribución por Sexos',
+            icon: Icons.male,
+            chart: _buildSexosChart(context),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildChartContainer(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Widget chart,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Título de la gráfica
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: const Color(0xFF4CAF50), size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF2E7D32),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Gráfica
+          SizedBox(height: 300, child: chart),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRazasChart(BuildContext context) {
+    // Convertir los datos a una lista para el gráfico
+    final entries = totalRazas.entries.toList();
+
+    // Colores predefinidos para las barras
+    final colors = [
+      const Color(0xFF4CAF50),
+      const Color(0xFF2196F3),
+      const Color(0xFFFF9800),
+      const Color(0xFF9C27B0),
+      const Color(0xFFF44336),
+      const Color(0xFF00BCD4),
+      const Color(0xFF8BC34A),
+      const Color(0xFFFFEB3B),
+      const Color(0xFF795548),
+      const Color(0xFF607D8B),
+    ];
+
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: 60, // Rango fijo de 0 a 60 para razas
+        barTouchData: BarTouchData(
+          enabled: true,
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                '${entries[group.x.toInt()].key}\n${rod.toY.round()} bovinos',
+                const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                if (value.toInt() >= entries.length) return const Text('');
+
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    _truncateText(entries[value.toInt()].key, 8),
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              },
+              reservedSize: 40,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                return Text(
+                  value.toInt().toString(),
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                );
+              },
+              reservedSize: 40,
+            ),
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: entries.asMap().entries.map((entry) {
+          final index = entry.key;
+          final data = entry.value;
+
+          return BarChartGroupData(
+            x: index,
+            barRods: [
+              BarChartRodData(
+                toY: data.value.toDouble(),
+                color: colors[index % colors.length],
+                width: 30,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  topRight: Radius.circular(6),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 10, // Intervalos de 10 para el rango 0-60
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey.withValues(alpha: 0.3),
+              strokeWidth: 1,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSexosChart(BuildContext context) {
+    // Para sexos usamos colores específicos
+    final sexoColors = {
+      'Macho': const Color(0xFF2196F3),
+      'Hembra': const Color(0xFFE91E63),
+      'Desconocido': const Color(0xFF9E9E9E),
+    };
+
+    final entries = totalSexos.entries.toList();
+
+    return BarChart(
+      BarChartData(
+        alignment: BarChartAlignment.spaceAround,
+        maxY: 100, // Rango fijo de 0 a 100 para sexos
+        barTouchData: BarTouchData(
+          enabled: true,
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                '${entries[group.x.toInt()].key}\n${rod.toY.round()} bovinos',
+                const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                if (value.toInt() >= entries.length) return const Text('');
+
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    entries[value.toInt()].key,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              },
+              reservedSize: 40,
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                return Text(
+                  value.toInt().toString(),
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                );
+              },
+              reservedSize: 40,
+            ),
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: entries.asMap().entries.map((entry) {
+          final index = entry.key;
+          final data = entry.value;
+
+          return BarChartGroupData(
+            x: index,
+            barRods: [
+              BarChartRodData(
+                toY: data.value.toDouble(),
+                color: sexoColors[data.key] ?? const Color(0xFF9E9E9E),
+                width: 40,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  topRight: Radius.circular(6),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          horizontalInterval: 20, // Intervalos de 20 para el rango 0-100
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: Colors.grey.withValues(alpha: 0.3),
+              strokeWidth: 1,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // Helpers
+  String _truncateText(String text, int maxLength) {
+    if (text.length <= maxLength) return text;
+    return '${text.substring(0, maxLength)}...';
+  }
+}

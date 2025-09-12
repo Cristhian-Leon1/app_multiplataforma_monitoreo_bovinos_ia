@@ -16,11 +16,11 @@ class BovinoCreateDto extends BovinoBase {
   final String fincaId;
 
   BovinoCreateDto({
-    required String idBovino,
+    required super.idBovino,
     required this.fincaId,
-    String? sexo,
-    String? raza,
-  }) : super(idBovino: idBovino, sexo: sexo, raza: raza);
+    super.sexo,
+    super.raza,
+  });
 
   @override
   Map<String, dynamic> toJson() {
@@ -58,12 +58,12 @@ class BovinoModel extends BovinoBase {
 
   BovinoModel({
     required this.id,
-    required String idBovino,
+    required super.idBovino,
     required this.fincaId,
     required this.createdAt,
-    String? sexo,
-    String? raza,
-  }) : super(idBovino: idBovino, sexo: sexo, raza: raza);
+    super.sexo,
+    super.raza,
+  });
 
   factory BovinoModel.fromJson(Map<String, dynamic> json) {
     return BovinoModel(
@@ -94,21 +94,14 @@ class BovinoWithMedicionesModel extends BovinoModel {
   final List<Map<String, dynamic>> mediciones;
 
   BovinoWithMedicionesModel({
-    required String id,
-    required String idBovino,
-    required String fincaId,
-    required String createdAt,
-    String? sexo,
-    String? raza,
+    required super.id,
+    required super.idBovino,
+    required super.fincaId,
+    required super.createdAt,
+    super.sexo,
+    super.raza,
     required this.mediciones,
-  }) : super(
-         id: id,
-         idBovino: idBovino,
-         fincaId: fincaId,
-         createdAt: createdAt,
-         sexo: sexo,
-         raza: raza,
-       );
+  });
 
   factory BovinoWithMedicionesModel.fromJson(Map<String, dynamic> json) {
     return BovinoWithMedicionesModel(

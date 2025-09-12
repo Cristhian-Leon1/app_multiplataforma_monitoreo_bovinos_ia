@@ -44,24 +44,15 @@ class MedicionCreateDto extends MedicionBase {
 
   MedicionCreateDto({
     required this.bovinoId,
-    required DateTime fecha,
-    double? alturaCm,
-    double? lTorsoCm,
-    double? lOblicuaCm,
-    double? lCaderaCm,
-    double? aCaderaCm,
-    int? edadMeses,
-    double? pesoBasculaKg,
-  }) : super(
-         fecha: fecha,
-         alturaCm: alturaCm,
-         lTorsoCm: lTorsoCm,
-         lOblicuaCm: lOblicuaCm,
-         lCaderaCm: lCaderaCm,
-         aCaderaCm: aCaderaCm,
-         edadMeses: edadMeses,
-         pesoBasculaKg: pesoBasculaKg,
-       );
+    required super.fecha,
+    super.alturaCm,
+    super.lTorsoCm,
+    super.lOblicuaCm,
+    super.lCaderaCm,
+    super.aCaderaCm,
+    super.edadMeses,
+    super.pesoBasculaKg,
+  });
 
   @override
   Map<String, dynamic> toJson() {
@@ -117,24 +108,15 @@ class MedicionModel extends MedicionBase {
     required this.id,
     required this.bovinoId,
     required this.createdAt,
-    required DateTime fecha,
-    double? alturaCm,
-    double? lTorsoCm,
-    double? lOblicuaCm,
-    double? lCaderaCm,
-    double? aCaderaCm,
-    int? edadMeses,
-    double? pesoBasculaKg,
-  }) : super(
-         fecha: fecha,
-         alturaCm: alturaCm,
-         lTorsoCm: lTorsoCm,
-         lOblicuaCm: lOblicuaCm,
-         lCaderaCm: lCaderaCm,
-         aCaderaCm: aCaderaCm,
-         edadMeses: edadMeses,
-         pesoBasculaKg: pesoBasculaKg,
-       );
+    required super.fecha,
+    super.alturaCm,
+    super.lTorsoCm,
+    super.lOblicuaCm,
+    super.lCaderaCm,
+    super.aCaderaCm,
+    super.edadMeses,
+    super.pesoBasculaKg,
+  });
 
   factory MedicionModel.fromJson(Map<String, dynamic> json) {
     return MedicionModel(

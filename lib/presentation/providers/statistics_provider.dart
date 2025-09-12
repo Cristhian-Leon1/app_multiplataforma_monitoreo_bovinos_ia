@@ -22,9 +22,8 @@ class StatisticsProvider extends ChangeNotifier {
 
   // Estadísticas calculadas
   int _totalBovinos = 0;
-  int _bovinosSanos = 0;
-  int _bovinosAlerta = 0;
-  int _analisisRealizados = 0;
+  Map<String, int> _totalRazas = {};
+  Map<String, int> _totalSexos = {};
 
   // Getters para el estado
   bool get isLoading => _isLoading;
@@ -37,9 +36,8 @@ class StatisticsProvider extends ChangeNotifier {
 
   // Getters para estadísticas
   int get totalBovinos => _totalBovinos;
-  int get bovinosSanos => _bovinosSanos;
-  int get bovinosAlerta => _bovinosAlerta;
-  int get analisisRealizados => _analisisRealizados;
+  Map<String, int> get totalRazas => _totalRazas;
+  Map<String, int> get totalSexos => _totalSexos;
 
   /// Limpiar errores
   void clearError() {
@@ -138,25 +136,15 @@ class StatisticsProvider extends ChangeNotifier {
     clearError();
 
     try {
-      print('DEBUG - Iniciando creación de finca: $fincaName');
-      print('DEBUG - Token disponible: ${userToken.isNotEmpty}');
-      print(
-        'DEBUG - Token preview: ${userToken.length > 10 ? userToken.substring(0, 10) + "..." : userToken}',
-      );
-
       // Test de conectividad antes de crear finca
       await ApiTestService.testFincaEndpoint(userToken);
 
       final fincaData = FincaCreateDto(nombre: fincaName);
-      print('DEBUG - Datos a enviar: ${fincaData.toJson()}');
 
       final newFinca = await FincaService.createFinca(
         token: userToken,
         fincaData: fincaData,
       );
-
-      print('DEBUG - Finca creada exitosamente: ${newFinca.toJson()}');
-
       // Actualizar el estado
       _fincas.add(newFinca);
       _selectedFinca = newFinca;
@@ -171,7 +159,6 @@ class StatisticsProvider extends ChangeNotifier {
       _setCreatingFinca(false);
       return true;
     } catch (e) {
-      print('DEBUG - Error al crear finca: $e');
       _setCreatingFinca(false); // Resetear estado de loading en caso de error
       _setError('Error al crear la finca: ${e.toString()}');
       return false;
@@ -192,6 +179,9 @@ class StatisticsProvider extends ChangeNotifier {
   /// Cargar estadísticas de una finca específica
   Future<void> _loadFincaStatistics(String userToken, String fincaId) async {
     try {
+      // Resetear estadísticas antes de calcular nuevas
+      _resetStatistics();
+
       // Obtener finca con bovinos
       final fincaWithBovinos = await FincaService.getFincaWithBovinos(
         token: userToken,
@@ -202,12 +192,21 @@ class StatisticsProvider extends ChangeNotifier {
       final bovinos = fincaWithBovinos.bovinos ?? [];
       _totalBovinos = bovinos.length;
 
-      // Por ahora, como no tenemos el campo de estado de salud,
-      // usaremos valores simulados basados en los datos existentes
-      _bovinosSanos = (_totalBovinos * 0.8).round(); // 80% sanos
-      _bovinosAlerta = _totalBovinos - _bovinosSanos; // El resto en alerta
-      _analisisRealizados =
-          _totalBovinos; // Cada bovino registrado tiene al menos un análisis
+      // Contar razas
+      for (var bovino in bovinos) {
+        final raza = bovino['raza'] ?? 'Desconocida';
+        _totalRazas[raza] = (_totalRazas[raza] ?? 0) + 1;
+      }
+
+      // Contar sexos
+      for (var bovino in bovinos) {
+        final sexo = bovino['sexo'] ?? 'Desconocido';
+        _totalSexos[sexo] = (_totalSexos[sexo] ?? 0) + 1;
+      }
+
+      print('Total bovinos: $_totalBovinos');
+      print('Total por razas: $_totalRazas');
+      print('Total por sexos: $_totalSexos');
 
       _safeNotifyListeners();
     } catch (e) {
@@ -220,9 +219,8 @@ class StatisticsProvider extends ChangeNotifier {
   /// Resetear estadísticas
   void _resetStatistics() {
     _totalBovinos = 0;
-    _bovinosSanos = 0;
-    _bovinosAlerta = 0;
-    _analisisRealizados = 0;
+    _totalRazas = {};
+    _totalSexos = {};
   }
 
   /// Validar nombre de finca

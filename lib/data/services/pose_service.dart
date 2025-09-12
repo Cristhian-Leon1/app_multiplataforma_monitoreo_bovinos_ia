@@ -7,7 +7,7 @@ import '../models/pose_model.dart';
 
 /// Servicio para el análisis de pose de bovinos
 class PoseService {
-  static const String _baseUrl = 'https://b1a6a03b000f.ngrok-free.app';
+  static const String _baseUrl = 'https://f33a8ea59ebf.ngrok-free.app';
   static const String _predictEndpoint = '/predict/';
 
   static const Map<String, String> _headers = {
@@ -54,17 +54,6 @@ class PoseService {
       if (validationImage == null) {
         throw Exception('La imagen codificada no es válida');
       }
-
-      print(
-        'Imagen redimensionada: ${originalImage.width}x${originalImage.height} -> ${newWidth}x${newHeight}',
-      );
-      print(
-        'Tamaño original: ${originalBytes.length} bytes -> Redimensionada: ${resizedBytes.length} bytes',
-      );
-      print(
-        'Validación: Imagen redimensionada es válida (${validationImage.width}x${validationImage.height})',
-      );
-
       return resizedBytes;
     } catch (e) {
       throw Exception('Error al procesar imagen: $e');
@@ -100,10 +89,8 @@ class PoseService {
         // Devolver tanto la predicción como la imagen redimensionada
         return (prediction, imageBytes);
       } else if (response.statusCode == 400) {
-        print('❌ Error 400 - Datos inválidos: ${response.body}');
         throw Exception('Error 400 - Datos inválidos: ${response.body}');
       } else {
-        print('❌ Error ${response.statusCode}: ${response.body}');
         throw Exception(
           'Error en la API: ${response.statusCode} - ${response.body}',
         );

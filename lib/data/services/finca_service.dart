@@ -57,8 +57,6 @@ class FincaService {
       if (response.statusCode == 307 || response.statusCode == 308) {
         final location = response.headers['location'];
         if (location != null) {
-          print('DEBUG - Siguiendo redirección a: $location');
-
           // Hacer la petición a la nueva URL
           switch (method.toUpperCase()) {
             case 'POST':
@@ -82,10 +80,6 @@ class FincaService {
                   .timeout(_timeout);
               break;
           }
-
-          print(
-            'DEBUG - Respuesta después de redirección: ${response.statusCode}',
-          );
         }
       }
 
@@ -101,20 +95,12 @@ class FincaService {
     required FincaCreateDto fincaData,
   }) async {
     try {
-      print('DEBUG - Enviando datos: ${jsonEncode(fincaData.toJson())}');
-      print('DEBUG - URL: $_fincaEndpoint/');
-      print('DEBUG - Headers: ${_getHeaders(token)}');
-
       final response = await _makeRequest(
         method: 'POST',
         url: '$_fincaEndpoint/',
         headers: _getHeaders(token),
         body: jsonEncode(fincaData.toJson()),
       );
-
-      print('DEBUG - Status Code: ${response.statusCode}');
-      print('DEBUG - Response body: ${response.body}');
-      print('DEBUG - Response headers: ${response.headers}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         if (response.body.isEmpty) {
@@ -175,7 +161,6 @@ class FincaService {
         }
       }
     } catch (e) {
-      print('DEBUG - Error completo: $e');
       if (e.toString().contains('SocketException') ||
           e.toString().contains('TimeoutException')) {
         throw Exception('Error de conexión: Verifica tu conexión a internet');
@@ -187,18 +172,11 @@ class FincaService {
   /// Obtener todas las fincas del usuario
   static Future<List<FincaModel>> getUserFincas({required String token}) async {
     try {
-      print('DEBUG - Obteniendo fincas del usuario');
-      print('DEBUG - URL: $_fincaEndpoint/');
-
       final response = await _makeRequest(
         method: 'GET',
         url: '$_fincaEndpoint/',
         headers: _getHeaders(token),
       );
-
-      print('DEBUG - Status Code GET fincas: ${response.statusCode}');
-      print('DEBUG - Response body GET fincas: ${response.body}');
-
       if (response.statusCode == 200) {
         if (response.body.isEmpty) {
           return []; // Lista vacía si no hay contenido
@@ -256,7 +234,6 @@ class FincaService {
         }
       }
     } catch (e) {
-      print('DEBUG - Error completo en getUserFincas: $e');
       if (e.toString().contains('SocketException') ||
           e.toString().contains('TimeoutException')) {
         throw Exception('Error de conexión: Verifica tu conexión a internet');

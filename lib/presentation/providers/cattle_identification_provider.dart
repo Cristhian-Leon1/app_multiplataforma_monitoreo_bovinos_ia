@@ -560,7 +560,6 @@ class CattleIdentificationProvider extends ChangeNotifier {
       bool bovinoCreated = false;
 
       // 1. Verificar si el bovino ya existe
-      print('CattleProvider - Buscando bovino existente con ID: $idBovino');
       bovino = await BovinoService.findBovinoByIdBovino(
         token: token,
         idBovino: idBovino,
@@ -568,7 +567,6 @@ class CattleIdentificationProvider extends ChangeNotifier {
 
       if (bovino == null) {
         // 2. El bovino no existe, crear uno nuevo
-        print('CattleProvider - Bovino no encontrado, creando nuevo bovino');
         final bovinoDto = BovinoCreateDto(
           idBovino: idBovino,
           fincaId: fincaId,
@@ -581,9 +579,8 @@ class CattleIdentificationProvider extends ChangeNotifier {
           bovinoData: bovinoDto,
         );
         bovinoCreated = true;
-        print('CattleProvider - Bovino creado exitosamente: ${bovino.id}');
       } else {
-        print('CattleProvider - Bovino existente encontrado: ${bovino.id}');
+        // Bovino existente encontrado
       }
 
       // 3. Crear mediciones si hay datos morfométricos disponibles
@@ -597,7 +594,6 @@ class CattleIdentificationProvider extends ChangeNotifier {
         'medicionesCount': medicionesCreadas,
       };
     } catch (e) {
-      print('CattleProvider - Error en registerBovinoWithMediciones: $e');
       _setError('Error al registrar bovino: ${e.toString()}');
       return null;
     }
@@ -617,9 +613,6 @@ class CattleIdentificationProvider extends ChangeNotifier {
           _longitudTorso != null ||
           _edadEstimada != null ||
           _pesoEstimado != null) {
-        print('CattleProvider - Creando medición con datos:');
-        print('  - bovinoUuid: $bovinoUuid');
-
         // Formatear decimales a máximo 6 dígitos totales (4 enteros + 2 decimales)
         final alturaFormateada = _altura != null
             ? double.parse(_altura!.toStringAsFixed(2))
@@ -640,14 +633,6 @@ class CattleIdentificationProvider extends ChangeNotifier {
             ? double.parse(_pesoEstimado!.toStringAsFixed(2))
             : null;
 
-        print('  - altura: $alturaFormateada');
-        print('  - longitudOblicua: $longitudOblicuaFormateada');
-        print('  - longitudCadera: $longitudCaderaFormateada');
-        print('  - anchoCadera: $anchoCaderaFormateada');
-        print('  - longitudTorso: $longitudTorsoFormateada');
-        print('  - edadEstimada: $_edadEstimada');
-        print('  - pesoEstimado: $pesoEstimadoFormateado');
-
         final medicionDto = MedicionCreateDto(
           bovinoId: bovinoUuid,
           fecha: fechaHoy,
@@ -666,14 +651,10 @@ class CattleIdentificationProvider extends ChangeNotifier {
         );
 
         medicionesCreadas = 1;
-        print('CattleProvider - Medición creada exitosamente');
       } else {
-        print(
-          'CattleProvider - No hay datos morfométricos para crear medición',
-        );
+        // No hay datos morfologicos para crear medición
       }
     } catch (e) {
-      print('CattleProvider - Error creando mediciones: $e');
       // No lanzamos excepción aquí para no interrumpir el flujo principal
       // El bovino ya fue creado/encontrado exitosamente
     }
