@@ -24,6 +24,13 @@ class StatisticsProvider extends ChangeNotifier {
   int _totalBovinos = 0;
   Map<String, int> _totalRazas = {};
   Map<String, int> _totalSexos = {};
+  Map<String, int> _totalRangosEdad = {};
+
+  // Filtro y promedios por raza
+  String? _selectedRazaFilter;
+  Map<String, double> _pesoPromedioByRangoEdad = {};
+  Map<String, double> _alturaPromedioByRangoEdad = {};
+  List<BovinoWithLastMedicion> _bovinos = []; // Para almacenar los bovinos
 
   // Getters para el estado
   bool get isLoading => _isLoading;
@@ -38,11 +45,28 @@ class StatisticsProvider extends ChangeNotifier {
   int get totalBovinos => _totalBovinos;
   Map<String, int> get totalRazas => _totalRazas;
   Map<String, int> get totalSexos => _totalSexos;
+  Map<String, int> get totalRangosEdad => _totalRangosEdad;
+
+  // Getters para filtro y promedios
+  String? get selectedRazaFilter => _selectedRazaFilter;
+  Map<String, double> get pesoPromedioByRangoEdad => _pesoPromedioByRangoEdad;
+  Map<String, double> get alturaPromedioByRangoEdad =>
+      _alturaPromedioByRangoEdad;
+  List<String> get availableRazas => _totalRazas.keys.toList();
 
   /// Limpiar errores
   void clearError() {
     if (_errorMessage != null) {
       _errorMessage = null;
+      _safeNotifyListeners();
+    }
+  }
+
+  /// Cambiar filtro de raza y recalcular promedios
+  void setRazaFilter(String? raza) {
+    if (_selectedRazaFilter != raza) {
+      _selectedRazaFilter = raza;
+      _calculatePromediosByRaza();
       _safeNotifyListeners();
     }
   }
@@ -182,37 +206,54 @@ class StatisticsProvider extends ChangeNotifier {
       // Resetear estadísticas antes de calcular nuevas
       _resetStatistics();
 
-      // Obtener finca con bovinos
-      final fincaWithBovinos = await FincaService.getFincaWithBovinos(
+      // Obtener finca completa con bovinos y sus últimas mediciones
+      final fincaCompleta = await FincaService.getFincaComplete(
         token: userToken,
         fincaId: fincaId,
       );
 
-      // Calcular estadísticas
-      final bovinos = fincaWithBovinos.bovinos ?? [];
+      // Calcular estadísticas usando los bovinos de la respuesta completa
+      final bovinos = fincaCompleta.bovinos;
+      _bovinos = bovinos; // Guardar bovinos para filtros
       _totalBovinos = bovinos.length;
 
       // Contar razas
       for (var bovino in bovinos) {
-        final raza = bovino['raza'] ?? 'Desconocida';
+        final raza = bovino.raza ?? 'Desconocida';
         _totalRazas[raza] = (_totalRazas[raza] ?? 0) + 1;
       }
 
       // Contar sexos
       for (var bovino in bovinos) {
-        final sexo = bovino['sexo'] ?? 'Desconocido';
+        final sexo = bovino.sexo ?? 'Desconocido';
         _totalSexos[sexo] = (_totalSexos[sexo] ?? 0) + 1;
+      }
+
+      // Contar por rangos de edad usando la última medición
+      for (var bovino in bovinos) {
+        if (bovino.ultimaMedicion != null &&
+            bovino.ultimaMedicion!['edad_meses'] != null) {
+          final edadMeses = bovino.ultimaMedicion!['edad_meses'] as num;
+          final rangoEdad = _getRangoEdad(edadMeses.toInt());
+          _totalRangosEdad[rangoEdad] = (_totalRangosEdad[rangoEdad] ?? 0) + 1;
+        } else {
+          // Si no hay medición o edad, contar como "Sin datos"
+          _totalRangosEdad['Sin datos'] =
+              (_totalRangosEdad['Sin datos'] ?? 0) + 1;
+        }
       }
 
       print('Total bovinos: $_totalBovinos');
       print('Total por razas: $_totalRazas');
       print('Total por sexos: $_totalSexos');
+      print('Total por rangos de edad: $_totalRangosEdad');
 
       _safeNotifyListeners();
     } catch (e) {
       // Si hay error al cargar estadísticas específicas, usar valores por defecto
       _resetStatistics();
       // No mostramos error aquí para no interferir con la UX principal
+      print('Error cargando estadísticas: $e');
     }
   }
 
@@ -221,6 +262,11 @@ class StatisticsProvider extends ChangeNotifier {
     _totalBovinos = 0;
     _totalRazas = {};
     _totalSexos = {};
+    _totalRangosEdad = {};
+    _bovinos = [];
+    _selectedRazaFilter = null;
+    _pesoPromedioByRangoEdad = {};
+    _alturaPromedioByRangoEdad = {};
   }
 
   /// Validar nombre de finca
@@ -300,6 +346,79 @@ class StatisticsProvider extends ChangeNotifier {
   /// Refrescar datos
   Future<void> refreshData(String userToken) async {
     await initializeData(userToken);
+  }
+
+  /// Determinar el rango de edad basado en los meses
+  String _getRangoEdad(int edadMeses) {
+    if (edadMeses >= 0 && edadMeses <= 6) {
+      return '0-6 meses';
+    } else if (edadMeses >= 7 && edadMeses <= 12) {
+      return '7-12 meses';
+    } else if (edadMeses >= 13 && edadMeses <= 24) {
+      return '13-24 meses';
+    } else if (edadMeses >= 25 && edadMeses <= 36) {
+      return '25-36 meses';
+    } else if (edadMeses >= 37 && edadMeses <= 48) {
+      return '37-48 meses';
+    } else if (edadMeses >= 49 && edadMeses <= 60) {
+      return '49-60 meses';
+    } else {
+      return 'Mayores a 60 meses';
+    }
+  }
+
+  /// Calcular promedios de peso y altura por rango de edad para la raza seleccionada
+  void _calculatePromediosByRaza() {
+    _pesoPromedioByRangoEdad.clear();
+    _alturaPromedioByRangoEdad.clear();
+
+    if (_selectedRazaFilter == null) return;
+
+    // Filtrar bovinos por raza seleccionada
+    final bovinosFiltrados = _bovinos
+        .where((bovino) => bovino.raza == _selectedRazaFilter)
+        .toList();
+
+    // Agrupar por rango de edad
+    Map<String, List<double>> pesosPorRango = {};
+    Map<String, List<double>> alturasPorRango = {};
+
+    for (var bovino in bovinosFiltrados) {
+      if (bovino.ultimaMedicion != null) {
+        final medicion = bovino.ultimaMedicion!;
+
+        // Obtener edad y rango
+        final edadMeses = medicion['edad_meses'];
+        if (edadMeses != null) {
+          final rangoEdad = _getRangoEdad((edadMeses as num).toInt());
+
+          // Obtener peso
+          final peso = medicion['peso_bascula_kg'];
+          if (peso != null) {
+            pesosPorRango.putIfAbsent(rangoEdad, () => []);
+            pesosPorRango[rangoEdad]!.add((peso as num).toDouble());
+          }
+
+          // Obtener altura
+          final altura = medicion['altura_cm'];
+          if (altura != null) {
+            alturasPorRango.putIfAbsent(rangoEdad, () => []);
+            alturasPorRango[rangoEdad]!.add((altura as num).toDouble());
+          }
+        }
+      }
+    }
+
+    // Calcular promedios
+    for (var entry in pesosPorRango.entries) {
+      final promedio = entry.value.reduce((a, b) => a + b) / entry.value.length;
+      _pesoPromedioByRangoEdad[entry.key] = promedio;
+    }
+
+    for (var entry in alturasPorRango.entries) {
+      final promedio = entry.value.reduce((a, b) => a + b) / entry.value.length;
+      _alturaPromedioByRangoEdad[entry.key] = promedio;
+    }
   }
 
   @override

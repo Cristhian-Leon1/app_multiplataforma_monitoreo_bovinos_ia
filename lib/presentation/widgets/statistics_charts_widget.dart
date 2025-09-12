@@ -4,17 +4,19 @@ import 'package:fl_chart/fl_chart.dart';
 class StatisticsChartsWidget extends StatelessWidget {
   final Map<String, int> totalRazas;
   final Map<String, int> totalSexos;
+  final Map<String, int> totalRangosEdad;
 
   const StatisticsChartsWidget({
     super.key,
     required this.totalRazas,
     required this.totalSexos,
+    required this.totalRangosEdad,
   });
 
   @override
   Widget build(BuildContext context) {
     // Si no hay datos, no mostrar las gráficas
-    if (totalRazas.isEmpty && totalSexos.isEmpty) {
+    if (totalRazas.isEmpty && totalSexos.isEmpty && totalRangosEdad.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -50,6 +52,17 @@ class StatisticsChartsWidget extends StatelessWidget {
             title: 'Distribución por Sexos',
             icon: Icons.male,
             chart: _buildSexosChart(context),
+          ),
+          const SizedBox(height: 24),
+        ],
+
+        // Gráfica de Rangos de Edad
+        if (totalRangosEdad.isNotEmpty) ...[
+          _buildChartContainer(
+            context,
+            title: 'Distribución por Rangos de Edad',
+            icon: Icons.schedule,
+            chart: _buildRangosEdadChart(context),
           ),
         ],
       ],
@@ -131,7 +144,7 @@ class StatisticsChartsWidget extends StatelessWidget {
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: 60, // Rango fijo de 0 a 60 para razas
+        maxY: 50, // Rango fijo de 0 a 60 para razas
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
@@ -193,7 +206,13 @@ class StatisticsChartsWidget extends StatelessWidget {
             ),
           ),
         ),
-        borderData: FlBorderData(show: false),
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            left: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+            bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+          ),
+        ),
         barGroups: entries.asMap().entries.map((entry) {
           final index = entry.key;
           final data = entry.value;
@@ -241,7 +260,7 @@ class StatisticsChartsWidget extends StatelessWidget {
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: 100, // Rango fijo de 0 a 100 para sexos
+        maxY: 50, // Rango fijo de 0 a 100 para sexos
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
@@ -303,7 +322,13 @@ class StatisticsChartsWidget extends StatelessWidget {
             ),
           ),
         ),
-        borderData: FlBorderData(show: false),
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            left: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+            bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+          ),
+        ),
         barGroups: entries.asMap().entries.map((entry) {
           final index = entry.key;
           final data = entry.value;
@@ -326,13 +351,192 @@ class StatisticsChartsWidget extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: 20, // Intervalos de 20 para el rango 0-100
+          horizontalInterval: 10, // Intervalos de 20 para el rango 0-100
           getDrawingHorizontalLine: (value) {
             return FlLine(
               color: Colors.grey.withValues(alpha: 0.3),
               strokeWidth: 1,
             );
           },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRangosEdadChart(BuildContext context) {
+    final entries = totalRangosEdad.entries.toList();
+
+    // Orden específico para los rangos de edad
+    final ordenRangos = [
+      '0-6 meses',
+      '7-12 meses',
+      '13-24 meses',
+      '25-36 meses',
+      '37-48 meses',
+      '49-60 meses',
+      '+ 60 meses',
+    ];
+
+    // Reorganizar entries según el orden específico
+    final entriesOrdenadas = <MapEntry<String, int>>[];
+    for (String rango in ordenRangos) {
+      final entry = entries.where((e) => e.key == rango).firstOrNull;
+      if (entry != null) {
+        entriesOrdenadas.add(entry);
+      }
+    }
+
+    // Colores específicos para rangos de edad
+    final coloresRangos = [
+      const Color(0xFF4CAF50), // Verde claro
+      const Color(0xFF8BC34A), // Verde lima
+      const Color(0xFFCDDC39), // Amarillo verde
+      const Color(0xFFFFC107), // Ámbar
+      const Color(0xFFFF9800), // Naranja
+      const Color(0xFFFF5722), // Naranja profundo
+      const Color(0xFFF44336), // Rojo
+      const Color(0xFF9E9E9E), // Gris para "Sin datos"
+    ];
+
+    return SizedBox(
+      height: 300,
+      child: BarChart(
+        BarChartData(
+          maxY: 20, // Rango de 0 a 20 para rangos de edad
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                if (groupIndex < entriesOrdenadas.length) {
+                  final entry = entriesOrdenadas[groupIndex];
+                  return BarTooltipItem(
+                    '${entry.key}\n${entry.value} bovinos',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                }
+                return null;
+              },
+            ),
+          ),
+          titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                interval: 5, // Intervalos de 5 para el rango 0-20
+                getTitlesWidget: (value, meta) {
+                  return Text(
+                    value.toInt().toString(),
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  );
+                },
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 60,
+                getTitlesWidget: (value, meta) {
+                  final index = value.toInt();
+                  if (index >= 0 && index < entriesOrdenadas.length) {
+                    final text = entriesOrdenadas[index].key;
+                    final parts = text.split(' ');
+
+                    // Mostrar en dos líneas para mejor legibilidad
+                    if (parts.length > 1) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              parts[0],
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            if (parts.length > 1)
+                              Text(
+                                parts.sublist(1).join(' '),
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 10,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          text,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      );
+                    }
+                  }
+                  return const Text('');
+                },
+              ),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+          ),
+          borderData: FlBorderData(
+            show: true,
+            border: Border(
+              left: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+              bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+            ),
+          ),
+          barGroups: entriesOrdenadas.asMap().entries.map((entry) {
+            final index = entry.key;
+            final data = entry.value;
+
+            return BarChartGroupData(
+              x: index,
+              barRods: [
+                BarChartRodData(
+                  toY: data.value.toDouble(),
+                  color: index < coloresRangos.length
+                      ? coloresRangos[index]
+                      : const Color(0xFF9E9E9E),
+                  width: 32,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(6),
+                    topRight: Radius.circular(6),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 5, // Intervalos de 5 para el rango 0-20
+            getDrawingHorizontalLine: (value) {
+              return FlLine(
+                color: Colors.grey.withValues(alpha: 0.3),
+                strokeWidth: 1,
+              );
+            },
+          ),
         ),
       ),
     );

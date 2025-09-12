@@ -5,6 +5,7 @@ import '../providers/statistics_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/finca_registration_widget.dart';
 import '../widgets/statistics_charts_widget.dart';
+import '../widgets/breed_filter_charts_widget.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
@@ -338,6 +339,20 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   StatisticsChartsWidget(
                     totalRazas: statisticsProvider.totalRazas,
                     totalSexos: statisticsProvider.totalSexos,
+                    totalRangosEdad: statisticsProvider.totalRangosEdad,
+                  ),
+
+                  // Filtro y gráficas por raza
+                  BreedFilterChartsWidget(
+                    availableRazas: statisticsProvider.availableRazas,
+                    selectedRaza: statisticsProvider.selectedRazaFilter,
+                    pesoPromedioByRangoEdad:
+                        statisticsProvider.pesoPromedioByRangoEdad,
+                    alturaPromedioByRangoEdad:
+                        statisticsProvider.alturaPromedioByRangoEdad,
+                    onRazaChanged: (raza) {
+                      statisticsProvider.setRazaFilter(raza);
+                    },
                   ),
 
                   const SizedBox(height: 20),

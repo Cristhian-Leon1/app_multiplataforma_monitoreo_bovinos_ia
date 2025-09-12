@@ -332,4 +332,30 @@ class FincaService {
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
+
+  /// Obtener finca completa con bovinos y sus últimas mediciones
+  static Future<FincaWithBovinosAndMediciones> getFincaComplete({
+    required String fincaId,
+    required String token,
+  }) async {
+    try {
+      final response = await _makeRequest(
+        method: 'GET',
+        url: '$_fincaEndpoint/$fincaId/complete',
+        headers: _getHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        return FincaWithBovinosAndMediciones.fromJson(responseData);
+      } else {
+        final errorData = jsonDecode(response.body);
+        throw Exception(
+          errorData['detail'] ?? 'Error al obtener datos completos de la finca',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error de conexión: ${e.toString()}');
+    }
+  }
 }
