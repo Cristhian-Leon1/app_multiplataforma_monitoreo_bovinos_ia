@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class StatisticsChartsWidget extends StatelessWidget {
@@ -173,20 +173,26 @@ class StatisticsChartsWidget extends StatelessWidget {
               getTitlesWidget: (double value, TitleMeta meta) {
                 if (value.toInt() >= entries.length) return const Text('');
 
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    _truncateText(entries[value.toInt()].key, 8),
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                return Transform.rotate(
+                  angle: -0.5, // Rotar -90 grados (en radianes)
+                  child: Container(
+                    width: 90, // Ancho fijo para el contenedor
+                    padding: const EdgeInsets.only(top: 5, right: 30),
+                    child: Text(
+                      entries[value.toInt()].key, // Mostrar el texto completo
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                      textAlign: TextAlign.end,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    textAlign: TextAlign.center,
                   ),
                 );
               },
-              reservedSize: 40,
+              reservedSize: 40, // Espacio suficiente para textos rotados
             ),
           ),
           leftTitles: AxisTitles(
@@ -202,7 +208,7 @@ class StatisticsChartsWidget extends StatelessWidget {
                   ),
                 );
               },
-              reservedSize: 40,
+              reservedSize: 25,
             ),
           ),
         ),
@@ -250,8 +256,8 @@ class StatisticsChartsWidget extends StatelessWidget {
   Widget _buildSexosChart(BuildContext context) {
     // Para sexos usamos colores específicos
     final sexoColors = {
-      'Macho': const Color(0xFF2196F3),
-      'Hembra': const Color(0xFFE91E63),
+      'Macho': const Color(0xFF8BC34A),
+      'Hembra': const Color(0xFF4CAF50),
       'Desconocido': const Color(0xFF9E9E9E),
     };
 
@@ -290,7 +296,7 @@ class StatisticsChartsWidget extends StatelessWidget {
                 if (value.toInt() >= entries.length) return const Text('');
 
                 return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: const EdgeInsets.only(top: 5),
                   child: Text(
                     entries[value.toInt()].key,
                     style: const TextStyle(
@@ -302,7 +308,7 @@ class StatisticsChartsWidget extends StatelessWidget {
                   ),
                 );
               },
-              reservedSize: 40,
+              reservedSize: 20,
             ),
           ),
           leftTitles: AxisTitles(
@@ -318,7 +324,7 @@ class StatisticsChartsWidget extends StatelessWidget {
                   ),
                 );
               },
-              reservedSize: 40,
+              reservedSize: 25,
             ),
           ),
         ),
@@ -339,7 +345,7 @@ class StatisticsChartsWidget extends StatelessWidget {
               BarChartRodData(
                 toY: data.value.toDouble(),
                 color: sexoColors[data.key] ?? const Color(0xFF9E9E9E),
-                width: 40,
+                width: 100,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(6),
                   topRight: Radius.circular(6),
@@ -374,15 +380,18 @@ class StatisticsChartsWidget extends StatelessWidget {
       '25-36 meses',
       '37-48 meses',
       '49-60 meses',
-      '+ 60 meses',
+      '+60 meses',
     ];
 
-    // Reorganizar entries según el orden específico
+    // Crear entries para TODOS los rangos, incluso los que no tienen datos
     final entriesOrdenadas = <MapEntry<String, int>>[];
     for (String rango in ordenRangos) {
       final entry = entries.where((e) => e.key == rango).firstOrNull;
       if (entry != null) {
         entriesOrdenadas.add(entry);
+      } else {
+        // Si no hay datos para este rango, agregar con valor 0
+        entriesOrdenadas.add(MapEntry(rango, 0));
       }
     }
 
@@ -424,7 +433,7 @@ class StatisticsChartsWidget extends StatelessWidget {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 40,
+                reservedSize: 25,
                 interval: 5, // Intervalos de 5 para el rango 0-20
                 getTitlesWidget: (value, meta) {
                   return Text(
@@ -437,7 +446,7 @@ class StatisticsChartsWidget extends StatelessWidget {
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 60,
+                reservedSize: 40,
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < entriesOrdenadas.length) {
@@ -540,11 +549,5 @@ class StatisticsChartsWidget extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  // Helpers
-  String _truncateText(String text, int maxLength) {
-    if (text.length <= maxLength) return text;
-    return '${text.substring(0, maxLength)}...';
   }
 }

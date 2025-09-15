@@ -77,6 +77,7 @@ class _PoseResultImageWidgetState extends State<PoseResultImageWidget> {
   void _calculateMorphometricMeasures(CattleIdentificationProvider provider) {
     for (final detection in widget.result.prediction.detections) {
       final keypoints = detection.keypoints;
+      final random = Random();
 
       if (detection.className == 'bovino_lateral') {
         // Mapeo de índices para bovino lateral:
@@ -99,15 +100,22 @@ class _PoseResultImageWidgetState extends State<PoseResultImageWidget> {
             keypoints[5],
             keypoints[6],
           ); // E-F
+          // Generar un entero entre 0 y 80
+          final edadAleatoria = random.nextInt(
+            81,
+          ); // incluye 0, excluye 81 → [0,80]
 
+          // Generar un double entre 50 y 600
+          final pesoAleatorio =
+              50 + random.nextDouble() * (600 - 50); // [50,600)
           // Actualizar el provider
           provider.updateMorphometricMeasures(
-            altura: altura,
-            longitudOblicua: longitudOblicua,
-            longitudCadera: longitudCadera,
-            longitudTorso: longitudTorso,
-            edadEstimada: 14,
-            pesoEstimado: 350.0,
+            altura: altura / 3.35,
+            longitudOblicua: longitudOblicua / 3.35,
+            longitudCadera: longitudCadera / 3.35,
+            longitudTorso: longitudTorso / 3.35,
+            edadEstimada: edadAleatoria,
+            pesoEstimado: pesoAleatorio,
           );
         } else if (keypoints.length >= 2) {
           // Caso limitado: solo tenemos C y D
@@ -116,7 +124,7 @@ class _PoseResultImageWidgetState extends State<PoseResultImageWidget> {
             keypoints[1],
           ); // C-D
 
-          provider.updateMorphometricMeasures(anchoCadera: anchoCadera);
+          provider.updateMorphometricMeasures(anchoCadera: anchoCadera / 5.8);
         }
       } else if (detection.className == 'bovino_posterior') {
         // Mapeo de índices para bovino posterior:
@@ -128,7 +136,7 @@ class _PoseResultImageWidgetState extends State<PoseResultImageWidget> {
             keypoints[1],
           ); // H-I
 
-          provider.updateMorphometricMeasures(anchoCadera: anchoCadera);
+          provider.updateMorphometricMeasures(anchoCadera: anchoCadera / 5.8);
         }
       }
     }

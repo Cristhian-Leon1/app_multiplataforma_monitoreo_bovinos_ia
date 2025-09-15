@@ -328,11 +328,14 @@ class _StatisticsPageState extends State<StatisticsPage> {
                       ),
                     ),
 
-                  CardHorizontal(
-                    icon: Icons.pets,
-                    title: 'Cantidad de bovinos en la finca',
-                    value: statisticsProvider.totalBovinos.toString(),
-                    color: const Color(0xFF4CAF50),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: CardHorizontal(
+                      icon: Icons.pets,
+                      title: 'Cantidad de bovinos en la finca',
+                      value: statisticsProvider.totalBovinos.toString(),
+                      color: const Color(0xFF4CAF50),
+                    ),
                   ),
 
                   // Gráficas de distribución

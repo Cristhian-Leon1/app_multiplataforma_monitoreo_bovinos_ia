@@ -137,7 +137,7 @@ class BreedFilterChartsWidget extends StatelessWidget {
                 items: [
                   const DropdownMenuItem<String>(
                     value: null,
-                    child: Text('Todas las razas'),
+                    child: Text('Seleccionar raza'),
                   ),
                   ...availableRazas.map(
                     (raza) => DropdownMenuItem<String>(
@@ -403,12 +403,12 @@ class BreedFilterChartsWidget extends StatelessWidget {
                 LineChartBarData(
                   spots: spots,
                   isCurved: true,
-                  color: const Color(0xFF2196F3),
+                  color: const Color(0xFF4CAF50),
                   barWidth: 3,
                   dotData: const FlDotData(show: true),
                   belowBarData: BarAreaData(
                     show: true,
-                    color: const Color(0xFF2196F3).withValues(alpha: 0.1),
+                    color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                   ),
                 ),
               ]
