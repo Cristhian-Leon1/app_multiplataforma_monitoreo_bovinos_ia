@@ -476,7 +476,7 @@ class PoseResultsDialog extends StatelessWidget {
                               ? (i <= 2
                                     ? identificationResults[i]
                                     : i >= 3 && i <= 7
-                                    ? "${identificationResults[i]} ${i == 6 ? 'px' : 'px'}"
+                                    ? "${identificationResults[i]} ${i == 6 ? 'cms' : 'cms'}"
                                     : i == 8
                                     ? "${identificationResults[i]} meses"
                                     : "${identificationResults[i]} kg")

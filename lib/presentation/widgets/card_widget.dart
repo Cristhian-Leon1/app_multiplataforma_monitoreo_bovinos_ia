@@ -66,18 +66,23 @@ class CardCuadrada extends StatelessWidget {
 }
 
 class CardHorizontal extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final Widget? iconWidget;
   final String title;
   final String value;
   final Color color;
 
   const CardHorizontal({
     super.key,
-    required this.icon,
+    this.icon,
+    this.iconWidget,
     required this.title,
     required this.value,
     required this.color,
-  });
+  }) : assert(
+         icon != null || iconWidget != null,
+         'Either icon or iconWidget must be provided',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -113,12 +118,12 @@ class CardHorizontal extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(15),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(50),
                 ),
-                child: Icon(icon, color: Colors.white, size: 30),
+                child: iconWidget ?? Icon(icon!, color: Colors.white, size: 30),
               ),
               SizedBox(width: 20),
               Text(

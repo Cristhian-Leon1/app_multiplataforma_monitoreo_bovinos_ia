@@ -1,5 +1,6 @@
 import 'package:app_multiplataforma_monitoreo_bovinos_ia/presentation/widgets/card_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../providers/statistics_provider.dart';
 import '../providers/auth_provider.dart';
@@ -331,7 +332,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
                     child: CardHorizontal(
-                      icon: Icons.pets,
+                      iconWidget: SvgPicture.asset(
+                        'assets/icons/icono_vaca.svg',
+                        width: 40,
+                        height: 40,
+                        colorFilter: const ColorFilter.mode(
+                          Colors.white,
+                          BlendMode.srcIn,
+                        ),
+                      ),
                       title: 'Cantidad de bovinos en la finca',
                       value: statisticsProvider.totalBovinos.toString(),
                       color: const Color(0xFF4CAF50),

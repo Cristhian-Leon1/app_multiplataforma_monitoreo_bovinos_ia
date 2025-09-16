@@ -1,5 +1,7 @@
+import 'package:app_multiplataforma_monitoreo_bovinos_ia/presentation/pages/cattle_pens_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../providers/auth_provider.dart';
 import '../providers/statistics_provider.dart';
 import '../../core/app_localizations.dart';
@@ -173,6 +175,8 @@ class _HomeViewState extends State<HomeView> {
       case 1:
         return const StatisticsPage();
       case 2:
+        return const CattlePensPage();
+      case 3:
         return ProfilePage(authProvider: authProvider, homeContext: context);
       default:
         return const CattleIdentificationPage();
@@ -243,6 +247,29 @@ class _HomeViewState extends State<HomeView> {
             icon: Container(
               padding: const EdgeInsets.all(8),
               decoration: _currentIndex == 2
+                  ? BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    )
+                  : null,
+              child: SvgPicture.asset(
+                'assets/icons/icono_cerca.svg',
+                width: 28,
+                height: 28,
+                colorFilter: ColorFilter.mode(
+                  _currentIndex == 2
+                      ? Colors.white
+                      : Colors.white.withValues(alpha: 0.6),
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+            label: 'Corrales',
+          ),
+          BottomNavigationBarItem(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: _currentIndex == 3
                   ? BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),

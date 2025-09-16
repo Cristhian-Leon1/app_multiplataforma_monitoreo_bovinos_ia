@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class BreedFilterChartsWidget extends StatelessWidget {
   final List<String> availableRazas;
@@ -50,7 +51,15 @@ class BreedFilterChartsWidget extends StatelessWidget {
             _buildLineChartContainer(
               context,
               title: 'Peso Promedio por Edad - $selectedRaza',
-              icon: Icons.monitor_weight,
+              iconWidget: SvgPicture.asset(
+                'assets/icons/icono_peso.svg',
+                width: 20,
+                height: 20,
+                colorFilter: const ColorFilter.mode(
+                  Color(0xFF4CAF50),
+                  BlendMode.srcIn,
+                ),
+              ),
               chart: _buildPesoChart(context),
             ),
             const SizedBox(height: 24),
@@ -158,7 +167,8 @@ class BreedFilterChartsWidget extends StatelessWidget {
   Widget _buildLineChartContainer(
     BuildContext context, {
     required String title,
-    required IconData icon,
+    IconData? icon,
+    Widget? iconWidget,
     required Widget chart,
   }) {
     return Container(
@@ -186,7 +196,13 @@ class BreedFilterChartsWidget extends StatelessWidget {
                   color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: const Color(0xFF4CAF50), size: 20),
+                child:
+                    iconWidget ??
+                    Icon(
+                      icon ?? Icons.help,
+                      color: const Color(0xFF4CAF50),
+                      size: 20,
+                    ),
               ),
               const SizedBox(width: 12),
               Expanded(

@@ -21,6 +21,7 @@ dependencies:
   permission_handler: ^11.0.1
   image: ^4.1.7
   fl_chart: ^0.68.0
+  flutter_svg: ^2.2.0
 
 dev_dependencies:
   flutter_test:
@@ -37,7 +38,7 @@ flutter:
 
   assets:
     - assets/images/
-  #   - images/a_dot_ham.jpeg
+    - assets/icons/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

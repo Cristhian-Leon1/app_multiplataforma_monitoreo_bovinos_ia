@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class StatisticsChartsWidget extends StatelessWidget {
   final Map<String, int> totalRazas;
@@ -50,7 +51,15 @@ class StatisticsChartsWidget extends StatelessWidget {
           _buildChartContainer(
             context,
             title: 'Distribución por Sexos',
-            icon: Icons.male,
+            iconWidget: SvgPicture.asset(
+              'assets/icons/icono_generos.svg',
+              width: 21,
+              height: 21,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF4CAF50),
+                BlendMode.srcIn,
+              ),
+            ),
             chart: _buildSexosChart(context),
           ),
           const SizedBox(height: 24),
@@ -72,7 +81,8 @@ class StatisticsChartsWidget extends StatelessWidget {
   Widget _buildChartContainer(
     BuildContext context, {
     required String title,
-    required IconData icon,
+    IconData? icon,
+    Widget? iconWidget,
     required Widget chart,
   }) {
     return Container(
@@ -100,7 +110,9 @@ class StatisticsChartsWidget extends StatelessWidget {
                   color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: const Color(0xFF4CAF50), size: 20),
+                child:
+                    iconWidget ??
+                    Icon(icon!, color: const Color(0xFF4CAF50), size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -380,7 +392,7 @@ class StatisticsChartsWidget extends StatelessWidget {
       '25-36 meses',
       '37-48 meses',
       '49-60 meses',
-      '+60 meses',
+      'Mayores a 60 meses',
     ];
 
     // Crear entries para TODOS los rangos, incluso los que no tienen datos
@@ -450,7 +462,13 @@ class StatisticsChartsWidget extends StatelessWidget {
                 getTitlesWidget: (value, meta) {
                   final index = value.toInt();
                   if (index >= 0 && index < entriesOrdenadas.length) {
-                    final text = entriesOrdenadas[index].key;
+                    String text = entriesOrdenadas[index].key;
+                    
+                    // Transformar "Mayores a 60 meses" a "+60 meses" para display
+                    if (text == 'Mayores a 60 meses') {
+                      text = '+60 meses';
+                    }
+                    
                     final parts = text.split(' ');
 
                     // Mostrar en dos líneas para mejor legibilidad
