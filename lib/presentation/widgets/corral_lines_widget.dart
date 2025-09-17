@@ -61,6 +61,43 @@ class CattlePointsPainter extends CustomPainter {
   }
 }
 
+/// CustomPainter para dibujar las líneas de puertas
+class GateLinesPainter extends CustomPainter {
+  final List<GateConnection> gates;
+  final bool showGates;
+  final double lineWidth;
+
+  const GateLinesPainter({
+    required this.gates,
+    required this.showGates,
+    this.lineWidth = 4.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!showGates || gates.isEmpty) return;
+
+    for (final gate in gates) {
+      // Paint para la línea de puerta
+      final gatePaint = Paint()
+        ..color = gate.color
+        ..strokeWidth = lineWidth
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+
+      // Dibujar la línea de puerta
+      canvas.drawLine(gate.start, gate.end, gatePaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(GateLinesPainter oldDelegate) {
+    return oldDelegate.gates != gates ||
+        oldDelegate.showGates != showGates ||
+        oldDelegate.lineWidth != lineWidth;
+  }
+}
+
 /// Widget que combina la imagen del corral con las líneas y puntos de ganado superpuestos
 class CorralWithLines extends StatelessWidget {
   final String imagePath;
@@ -68,6 +105,8 @@ class CorralWithLines extends StatelessWidget {
   final bool showLines;
   final Map<int, List<Offset>> cattlePoints;
   final bool showCattlePoints;
+  final List<GateConnection> gates;
+  final bool showGates;
   final double? width;
   final double? height;
 
@@ -78,6 +117,8 @@ class CorralWithLines extends StatelessWidget {
     required this.showLines,
     this.cattlePoints = const {},
     this.showCattlePoints = true,
+    this.gates = const [],
+    this.showGates = true,
     this.width,
     this.height,
   });
@@ -116,6 +157,14 @@ class CorralWithLines extends StatelessWidget {
                   cattlePoints: cattlePoints,
                   showPoints: showCattlePoints,
                 ),
+              ),
+            ),
+
+          // Líneas de puertas
+          if (showGates && gates.isNotEmpty)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: GateLinesPainter(gates: gates, showGates: showGates),
               ),
             ),
         ],

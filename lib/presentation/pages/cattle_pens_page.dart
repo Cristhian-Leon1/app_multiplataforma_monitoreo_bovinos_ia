@@ -23,8 +23,8 @@ class CattlePensPage extends StatelessWidget {
           const SizedBox(height: 15),
 
           // Control para alternar líneas del corral
-          // _buildToggleLineControl(context),
-          // const SizedBox(height: 10),
+          _buildToggleLineControl(context),
+          const SizedBox(height: 10),
 
           // Contenedores en columna
           Expanded(
@@ -84,6 +84,9 @@ class CattlePensPage extends StatelessWidget {
                 imageSize,
               );
 
+              // Obtener las puertas escaladas
+              final gates = corralProvider.getScaledGates(imageSize);
+
               return ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: CorralWithLines(
@@ -92,6 +95,8 @@ class CattlePensPage extends StatelessWidget {
                   showLines: corralProvider.showCorralLines,
                   cattlePoints: cattlePoints,
                   showCattlePoints: true,
+                  gates: gates,
+                  showGates: true,
                   width: containerSize.width,
                   height: containerSize.height,
                 ),

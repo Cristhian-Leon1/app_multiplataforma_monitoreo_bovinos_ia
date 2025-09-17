@@ -8,7 +8,7 @@ class CattlePensProvider extends ChangeNotifier {
     Offset(294, 819), // Punto 2
     Offset(396, 832), // Punto 3
     Offset(449, 668), // Punto 4
-    Offset(339, 576), // Punto 5
+    Offset(339, 582), // Punto 5
     Offset(200, 646), // Punto 6
     Offset(208, 718), // Punto 7
   ];
@@ -19,7 +19,7 @@ class CattlePensProvider extends ChangeNotifier {
     Offset(121, 579), // Punto 9
     Offset(171, 645), // Punto 10
     Offset(331, 556), // Punto 11
-    Offset(308, 433), // Punto 12
+    Offset(303, 435), // Punto 12
     Offset(161, 368), // Punto 13
     Offset(116, 444), // Punto 14
   ];
@@ -30,7 +30,7 @@ class CattlePensProvider extends ChangeNotifier {
     Offset(183, 254), // Punto 16
     Offset(177, 357), // Punto 17
     Offset(308, 412), // Punto 18
-    Offset(412, 311), // Punto 19
+    Offset(409, 315), // Punto 19
     Offset(352, 173), // Punto 20
     Offset(235, 190), // Punto 21
   ];
@@ -41,7 +41,7 @@ class CattlePensProvider extends ChangeNotifier {
     Offset(465, 103), // Punto 23
     Offset(380, 170), // Punto 24
     Offset(431, 303), // Punto 25
-    Offset(578, 304), // Punto 26
+    Offset(578, 310), // Punto 26
     Offset(630, 166), // Punto 27
     Offset(545, 101), // Punto 28
   ];
@@ -52,7 +52,7 @@ class CattlePensProvider extends ChangeNotifier {
     Offset(769, 187), // Punto 30
     Offset(660, 175), // Punto 31
     Offset(600, 305), // Punto 32
-    Offset(701, 410), // Punto 33
+    Offset(698, 415), // Punto 33
     Offset(846, 357), // Punto 34
     Offset(838, 268), // Punto 35
   ];
@@ -63,7 +63,7 @@ class CattlePensProvider extends ChangeNotifier {
     Offset(903, 441), // Punto 37
     Offset(857, 373), // Punto 38
     Offset(706, 431), // Punto 39
-    Offset(689, 556), // Punto 40
+    Offset(695, 564), // Punto 40
     Offset(849, 646), // Punto 41
     Offset(902, 572), // Punto 42
   ];
@@ -74,10 +74,26 @@ class CattlePensProvider extends ChangeNotifier {
     Offset(814, 746), // Punto 44
     Offset(828, 654), // Punto 45
     Offset(686, 578), // Punto 46
-    Offset(577, 666), // Punto 47
+    Offset(580, 670), // Punto 47
     Offset(622, 830), // Punto 48
     Offset(747, 821), // Punto 49
   ];
+
+  // Coordenadas de puntos adicionales para puertas (imagen original 1024x1024)
+  static const Offset _punto50 = Offset(360, 600); // Para Puerta A1
+  static const Offset _punto51 = Offset(349, 570); // Para Puerta A2
+  static const Offset _punto52 = Offset(309, 463); // Para Puerta B1
+  static const Offset _punto53 = Offset(324, 432); // Para Puerta B2
+  static const Offset _punto54 = Offset(390, 336); // Para Puerta C1
+  static const Offset _punto55 = Offset(422, 331); // Para Puerta C2
+  static const Offset _punto56 = Offset(550, 310); // Para Puerta D1
+  static const Offset _punto57 = Offset(577, 330); // Para Puerta D2
+  static const Offset _punto58 = Offset(677, 393); // Para Puerta E1
+  static const Offset _punto59 = Offset(680, 426); // Para Puerta E2
+  static const Offset _punto60 = Offset(700, 534); // Para Puerta F1
+  static const Offset _punto61 = Offset(668, 560); // Para Puerta F2
+  static const Offset _punto62 = Offset(602, 653); // Para Puerta G1
+  static const Offset _punto63 = Offset(560, 653); // Para Puerta G2
 
   // Tamaño original de la imagen
   static const double _originalImageSize = 1024.0;
@@ -428,6 +444,128 @@ class CattlePensProvider extends ChangeNotifier {
     return cattlePoints;
   }
 
+  /// Obtener las líneas de puertas escaladas según el tamaño actual
+  List<GateConnection> getScaledGates(double currentSize) {
+    final scaleFactor = currentSize / _originalImageSize;
+
+    // Puntos de referencia de los corrales
+    final punto5 = _corral1Points[4]; // Punto 5 del Corral 1: Offset(339, 582)
+    final punto12 =
+        _corral2Points[4]; // Punto 12 del Corral 2: Offset(308, 433)
+    final punto19 =
+        _corral3Points[4]; // Punto 19 del Corral 3: Offset(412, 311)
+    final punto26 =
+        _corral4Points[4]; // Punto 26 del Corral 4: Offset(578, 304)
+    final punto33 =
+        _corral5Points[4]; // Punto 33 del Corral 5: Offset(701, 410)
+    final punto40 =
+        _corral6Points[4]; // Punto 40 del Corral 6: Offset(689, 556)
+    final punto47 =
+        _corral7Points[4]; // Punto 47 del Corral 7: Offset(577, 666)
+
+    final gates = [
+      // Puertas del Corral 1 (A)
+      GateConnection(
+        start: Offset(punto5.dx * scaleFactor, punto5.dy * scaleFactor),
+        end: Offset(_punto50.dx * scaleFactor, _punto50.dy * scaleFactor),
+        id: 'A1',
+        color: Colors.red,
+      ),
+      GateConnection(
+        start: Offset(punto5.dx * scaleFactor, punto5.dy * scaleFactor),
+        end: Offset(_punto51.dx * scaleFactor, _punto51.dy * scaleFactor),
+        id: 'A2',
+        color: Colors.green,
+      ),
+
+      // Puertas del Corral 2 (B)
+      GateConnection(
+        start: Offset(punto12.dx * scaleFactor, punto12.dy * scaleFactor),
+        end: Offset(_punto52.dx * scaleFactor, _punto52.dy * scaleFactor),
+        id: 'B1',
+        color: Colors.red,
+      ),
+      GateConnection(
+        start: Offset(punto12.dx * scaleFactor, punto12.dy * scaleFactor),
+        end: Offset(_punto53.dx * scaleFactor, _punto53.dy * scaleFactor),
+        id: 'B2',
+        color: Colors.green,
+      ),
+
+      // Puertas del Corral 3 (C)
+      GateConnection(
+        start: Offset(punto19.dx * scaleFactor, punto19.dy * scaleFactor),
+        end: Offset(_punto54.dx * scaleFactor, _punto54.dy * scaleFactor),
+        id: 'C1',
+        color: Colors.red,
+      ),
+      GateConnection(
+        start: Offset(punto19.dx * scaleFactor, punto19.dy * scaleFactor),
+        end: Offset(_punto55.dx * scaleFactor, _punto55.dy * scaleFactor),
+        id: 'C2',
+        color: Colors.green,
+      ),
+
+      // Puertas del Corral 4 (D)
+      GateConnection(
+        start: Offset(punto26.dx * scaleFactor, punto26.dy * scaleFactor),
+        end: Offset(_punto56.dx * scaleFactor, _punto56.dy * scaleFactor),
+        id: 'D1',
+        color: Colors.red,
+      ),
+      GateConnection(
+        start: Offset(punto26.dx * scaleFactor, punto26.dy * scaleFactor),
+        end: Offset(_punto57.dx * scaleFactor, _punto57.dy * scaleFactor),
+        id: 'D2',
+        color: Colors.green,
+      ),
+
+      // Puertas del Corral 5 (E)
+      GateConnection(
+        start: Offset(punto33.dx * scaleFactor, punto33.dy * scaleFactor),
+        end: Offset(_punto58.dx * scaleFactor, _punto58.dy * scaleFactor),
+        id: 'E1',
+        color: Colors.red,
+      ),
+      GateConnection(
+        start: Offset(punto33.dx * scaleFactor, punto33.dy * scaleFactor),
+        end: Offset(_punto59.dx * scaleFactor, _punto59.dy * scaleFactor),
+        id: 'E2',
+        color: Colors.green,
+      ),
+
+      // Puertas del Corral 6 (F)
+      GateConnection(
+        start: Offset(punto40.dx * scaleFactor, punto40.dy * scaleFactor),
+        end: Offset(_punto60.dx * scaleFactor, _punto60.dy * scaleFactor),
+        id: 'F1',
+        color: Colors.red,
+      ),
+      GateConnection(
+        start: Offset(punto40.dx * scaleFactor, punto40.dy * scaleFactor),
+        end: Offset(_punto61.dx * scaleFactor, _punto61.dy * scaleFactor),
+        id: 'F2',
+        color: Colors.green,
+      ),
+
+      // Puertas del Corral 7 (G)
+      GateConnection(
+        start: Offset(punto47.dx * scaleFactor, punto47.dy * scaleFactor),
+        end: Offset(_punto62.dx * scaleFactor, _punto62.dy * scaleFactor),
+        id: 'G1',
+        color: Colors.red,
+      ),
+      GateConnection(
+        start: Offset(punto47.dx * scaleFactor, punto47.dy * scaleFactor),
+        end: Offset(_punto63.dx * scaleFactor, _punto63.dy * scaleFactor),
+        id: 'G2',
+        color: Colors.green,
+      ),
+    ];
+
+    return gates;
+  }
+
   /// Alternar la visibilidad de las líneas del corral
   void toggleCorralLines() {
     _showCorralLines = !_showCorralLines;
@@ -513,5 +651,25 @@ class LineConnection {
   @override
   String toString() {
     return 'LineConnection(corral $corralId, punto $pointNumber: $start -> $end)';
+  }
+}
+
+/// Clase para representar una puerta (conexión entre dos puntos específicos)
+class GateConnection {
+  final Offset start;
+  final Offset end;
+  final String id;
+  final Color color;
+
+  const GateConnection({
+    required this.start,
+    required this.end,
+    required this.id,
+    required this.color,
+  });
+
+  @override
+  String toString() {
+    return 'GateConnection($id: $start -> $end)';
   }
 }
