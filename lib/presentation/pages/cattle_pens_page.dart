@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/statistics_provider.dart';
+import '../providers/cattle_pens_provider.dart';
+import '../widgets/corral_lines_widget.dart';
 
 class CattlePensPage extends StatelessWidget {
   const CattlePensPage({super.key});
@@ -18,7 +20,11 @@ class CattlePensPage extends StatelessWidget {
               context,
             ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
           ),
-          const SizedBox(height: 25),
+          const SizedBox(height: 15),
+
+          // Control para alternar líneas del corral
+          // _buildToggleLineControl(context),
+          // const SizedBox(height: 10),
 
           // Contenedores en columna
           Expanded(
@@ -45,28 +51,55 @@ class CattlePensPage extends StatelessWidget {
     BuildContext context, {
     required String imagePath,
   }) {
-    return Container(
-      width: double.infinity,
-      height: 365,
-      padding: const EdgeInsets.all(0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return Consumer2<CattlePensProvider, StatisticsProvider>(
+      builder: (context, corralProvider, statisticsProvider, child) {
+        return Container(
+          width: double.infinity,
+          height: 365,
+          padding: const EdgeInsets.all(0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Image.asset(imagePath, fit: BoxFit.contain),
-      ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Calcular el tamaño real de la imagen dentro del contenedor
+              final containerSize = constraints.biggest;
+              final imageSize =
+                  containerSize.width; // Asumiendo que es cuadrado
+
+              // Obtener las líneas escaladas según el tamaño actual
+              final scaledLines = corralProvider.getScaledLines(imageSize);
+
+              // Generar puntos de ganado basado en los datos de estadísticas
+              final cattlePoints = corralProvider.generateCattlePoints(
+                statisticsProvider.totalRangosEdad,
+                imageSize,
+              );
+
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: CorralWithLines(
+                  imagePath: imagePath,
+                  lines: scaledLines,
+                  showLines: corralProvider.showCorralLines,
+                  cattlePoints: cattlePoints,
+                  showCattlePoints: true,
+                  width: containerSize.width,
+                  height: containerSize.height,
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -180,6 +213,60 @@ class CattlePensPage extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildToggleLineControl(BuildContext context) {
+    return Consumer<CattlePensProvider>(
+      builder: (context, corralProvider, child) {
+        return Column(
+          children: [
+            // Control principal para todas las líneas
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.timeline,
+                    color: corralProvider.showCorralLines
+                        ? const Color(0xFF4CAF50)
+                        : Colors.grey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Activar monitoreo con cámaras',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Switch(
+                    value: corralProvider.showCorralLines,
+                    onChanged: (_) => corralProvider.toggleCorralLines(),
+                    activeColor: const Color(0xFF4CAF50),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 10),
+          ],
+        );
+      },
     );
   }
 }

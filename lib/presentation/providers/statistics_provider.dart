@@ -243,17 +243,10 @@ class StatisticsProvider extends ChangeNotifier {
         }
       }
 
-      print('Total bovinos: $_totalBovinos');
-      print('Total por razas: $_totalRazas');
-      print('Total por sexos: $_totalSexos');
-      print('Total por rangos de edad: $_totalRangosEdad');
-
       _safeNotifyListeners();
     } catch (e) {
       // Si hay error al cargar estadísticas específicas, usar valores por defecto
       _resetStatistics();
-      // No mostramos error aquí para no interferir con la UX principal
-      print('Error cargando estadísticas: $e');
     }
   }
 

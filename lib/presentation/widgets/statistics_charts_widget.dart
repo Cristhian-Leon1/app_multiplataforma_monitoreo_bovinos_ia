@@ -463,12 +463,12 @@ class StatisticsChartsWidget extends StatelessWidget {
                   final index = value.toInt();
                   if (index >= 0 && index < entriesOrdenadas.length) {
                     String text = entriesOrdenadas[index].key;
-                    
+
                     // Transformar "Mayores a 60 meses" a "+60 meses" para display
                     if (text == 'Mayores a 60 meses') {
                       text = '+60 meses';
                     }
-                    
+
                     final parts = text.split(' ');
 
                     // Mostrar en dos líneas para mejor legibilidad
