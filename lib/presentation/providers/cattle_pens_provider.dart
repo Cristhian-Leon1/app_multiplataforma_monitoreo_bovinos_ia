@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
+import 'dart:async';
 
 class CattlePensProvider extends ChangeNotifier {
   // Coordenadas de los puntos del Corral 1 (imagen original 1024x1024)
@@ -108,6 +110,30 @@ class CattlePensProvider extends ChangeNotifier {
   bool _showCorral6Lines = true;
   bool _showCorral7Lines = true;
 
+  // Estado de visibilidad de las puertas
+  bool _showRedGates = true; // Puertas rojas (A1, B1, C1, D1, E1, F1, G1)
+  bool _showGreenGates =
+      false; // Puertas verdes (A2, B2, C2, D2, E2, F2, G2) - ocultas por defecto
+
+  // Variables para almacenamiento de cantidades de bovinos por corral
+  Map<String, int> _storedCorralCounts = {};
+  Map<String, int> _currentCorralCounts = {};
+
+  // Variables para control de animaciones de puertas
+  final Map<String, Timer?> _gateAnimationTimers = {};
+  final Map<String, bool> _animatingGates = {};
+
+  // Mapeo de rangos de edad a corrales/puertas
+  static const Map<String, String> _rangoToGate = {
+    '0-6 meses': 'A',
+    '7-12 meses': 'B',
+    '13-24 meses': 'C',
+    '25-36 meses': 'D',
+    '37-48 meses': 'E',
+    '49-60 meses': 'F',
+    'Mayores a 60 meses': 'G',
+  };
+
   // Getters
   bool get showCorralLines => _showCorralLines;
   bool get showCorral1Lines => _showCorral1Lines;
@@ -117,6 +143,8 @@ class CattlePensProvider extends ChangeNotifier {
   bool get showCorral5Lines => _showCorral5Lines;
   bool get showCorral6Lines => _showCorral6Lines;
   bool get showCorral7Lines => _showCorral7Lines;
+  bool get showRedGates => _showRedGates;
+  bool get showGreenGates => _showGreenGates;
   List<Offset> get corral1Points => _corral1Points;
   List<Offset> get corral2Points => _corral2Points;
   List<Offset> get corral3Points => _corral3Points;
@@ -125,6 +153,16 @@ class CattlePensProvider extends ChangeNotifier {
   List<Offset> get corral6Points => _corral6Points;
   List<Offset> get corral7Points => _corral7Points;
   double get originalImageSize => _originalImageSize;
+  Map<String, int> get currentCorralCounts => _currentCorralCounts;
+  Map<String, bool> get animatingGates => _animatingGates;
+
+  /// Inicializar el provider cargando datos almacenados
+  Future<void> initialize() async {
+    debugPrint('=== INICIALIZANDO CATTLE PENS PROVIDER ===');
+    await loadStoredCorralCounts();
+    debugPrint('Datos cargados desde SharedPreferences: $_storedCorralCounts');
+    notifyListeners();
+  }
 
   /// Obtener las líneas de conexión del corral 1
   List<LineConnection> getCorral1Lines() {
@@ -469,13 +507,13 @@ class CattlePensProvider extends ChangeNotifier {
         start: Offset(punto5.dx * scaleFactor, punto5.dy * scaleFactor),
         end: Offset(_punto50.dx * scaleFactor, _punto50.dy * scaleFactor),
         id: 'A1',
-        color: Colors.red,
+        color: getGateColor('A1'),
       ),
       GateConnection(
         start: Offset(punto5.dx * scaleFactor, punto5.dy * scaleFactor),
         end: Offset(_punto51.dx * scaleFactor, _punto51.dy * scaleFactor),
         id: 'A2',
-        color: Colors.green,
+        color: getGateColor('A2'),
       ),
 
       // Puertas del Corral 2 (B)
@@ -483,13 +521,13 @@ class CattlePensProvider extends ChangeNotifier {
         start: Offset(punto12.dx * scaleFactor, punto12.dy * scaleFactor),
         end: Offset(_punto52.dx * scaleFactor, _punto52.dy * scaleFactor),
         id: 'B1',
-        color: Colors.red,
+        color: getGateColor('B1'),
       ),
       GateConnection(
         start: Offset(punto12.dx * scaleFactor, punto12.dy * scaleFactor),
         end: Offset(_punto53.dx * scaleFactor, _punto53.dy * scaleFactor),
         id: 'B2',
-        color: Colors.green,
+        color: getGateColor('B2'),
       ),
 
       // Puertas del Corral 3 (C)
@@ -497,13 +535,13 @@ class CattlePensProvider extends ChangeNotifier {
         start: Offset(punto19.dx * scaleFactor, punto19.dy * scaleFactor),
         end: Offset(_punto54.dx * scaleFactor, _punto54.dy * scaleFactor),
         id: 'C1',
-        color: Colors.red,
+        color: getGateColor('C1'),
       ),
       GateConnection(
         start: Offset(punto19.dx * scaleFactor, punto19.dy * scaleFactor),
         end: Offset(_punto55.dx * scaleFactor, _punto55.dy * scaleFactor),
         id: 'C2',
-        color: Colors.green,
+        color: getGateColor('C2'),
       ),
 
       // Puertas del Corral 4 (D)
@@ -511,13 +549,13 @@ class CattlePensProvider extends ChangeNotifier {
         start: Offset(punto26.dx * scaleFactor, punto26.dy * scaleFactor),
         end: Offset(_punto56.dx * scaleFactor, _punto56.dy * scaleFactor),
         id: 'D1',
-        color: Colors.red,
+        color: getGateColor('D1'),
       ),
       GateConnection(
         start: Offset(punto26.dx * scaleFactor, punto26.dy * scaleFactor),
         end: Offset(_punto57.dx * scaleFactor, _punto57.dy * scaleFactor),
         id: 'D2',
-        color: Colors.green,
+        color: getGateColor('D2'),
       ),
 
       // Puertas del Corral 5 (E)
@@ -525,13 +563,13 @@ class CattlePensProvider extends ChangeNotifier {
         start: Offset(punto33.dx * scaleFactor, punto33.dy * scaleFactor),
         end: Offset(_punto58.dx * scaleFactor, _punto58.dy * scaleFactor),
         id: 'E1',
-        color: Colors.red,
+        color: getGateColor('E1'),
       ),
       GateConnection(
         start: Offset(punto33.dx * scaleFactor, punto33.dy * scaleFactor),
         end: Offset(_punto59.dx * scaleFactor, _punto59.dy * scaleFactor),
         id: 'E2',
-        color: Colors.green,
+        color: getGateColor('E2'),
       ),
 
       // Puertas del Corral 6 (F)
@@ -539,13 +577,13 @@ class CattlePensProvider extends ChangeNotifier {
         start: Offset(punto40.dx * scaleFactor, punto40.dy * scaleFactor),
         end: Offset(_punto60.dx * scaleFactor, _punto60.dy * scaleFactor),
         id: 'F1',
-        color: Colors.red,
+        color: getGateColor('F1'),
       ),
       GateConnection(
         start: Offset(punto40.dx * scaleFactor, punto40.dy * scaleFactor),
         end: Offset(_punto61.dx * scaleFactor, _punto61.dy * scaleFactor),
         id: 'F2',
-        color: Colors.green,
+        color: getGateColor('F2'),
       ),
 
       // Puertas del Corral 7 (G)
@@ -553,17 +591,32 @@ class CattlePensProvider extends ChangeNotifier {
         start: Offset(punto47.dx * scaleFactor, punto47.dy * scaleFactor),
         end: Offset(_punto62.dx * scaleFactor, _punto62.dy * scaleFactor),
         id: 'G1',
-        color: Colors.red,
+        color: getGateColor('G1'),
       ),
       GateConnection(
         start: Offset(punto47.dx * scaleFactor, punto47.dy * scaleFactor),
         end: Offset(_punto63.dx * scaleFactor, _punto63.dy * scaleFactor),
         id: 'G2',
-        color: Colors.green,
+        color: getGateColor('G2'),
       ),
     ];
 
-    return gates;
+    // Filtrar las puertas según su visibilidad y animaciones
+    return gates.where((gate) {
+      // Durante animaciones, mostrar ambas puertas del par afectado
+      if (isGateAnimating(gate.id)) {
+        return true; // Mostrar ambas puertas durante animación
+      }
+
+      // Lógica normal de visibilidad basada en el ID de la puerta
+      if (gate.id.endsWith('1') && !_showRedGates) {
+        return false; // Ocultar puertas tipo 1 si están deshabilitadas
+      }
+      if (gate.id.endsWith('2') && !_showGreenGates) {
+        return false; // Ocultar puertas tipo 2 si están deshabilitadas
+      }
+      return true; // Mostrar la puerta
+    }).toList();
   }
 
   /// Alternar la visibilidad de las líneas del corral
@@ -631,6 +684,166 @@ class CattlePensProvider extends ChangeNotifier {
     _showCorral6Lines = false;
     _showCorral7Lines = false;
     notifyListeners();
+  }
+
+  /// Métodos para controlar la visibilidad de las puertas
+  void toggleRedGates() {
+    _showRedGates = !_showRedGates;
+    notifyListeners();
+  }
+
+  void toggleGreenGates() {
+    _showGreenGates = !_showGreenGates;
+    notifyListeners();
+  }
+
+  void enableRedGates() {
+    _showRedGates = true;
+    notifyListeners();
+  }
+
+  void hideRedGates() {
+    _showRedGates = false;
+    notifyListeners();
+  }
+
+  void enableGreenGates() {
+    _showGreenGates = true;
+    notifyListeners();
+  }
+
+  void hideGreenGates() {
+    _showGreenGates = false;
+    notifyListeners();
+  }
+
+  /// Cargar cantidades almacenadas desde SharedPreferences
+  Future<void> loadStoredCorralCounts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = [
+        '0-6 meses',
+        '7-12 meses',
+        '13-24 meses',
+        '25-36 meses',
+        '37-48 meses',
+        '49-60 meses',
+        'Mayores a 60 meses',
+      ];
+
+      for (String key in keys) {
+        final count = prefs.getInt('corral_$key') ?? 0;
+        _storedCorralCounts[key] = count;
+      }
+    } catch (e) {
+      debugPrint('Error loading stored corral counts: $e');
+    }
+  }
+
+  /// Guardar cantidades actuales en SharedPreferences
+  Future<void> saveCorralCounts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (String key in _currentCorralCounts.keys) {
+        await prefs.setInt('corral_$key', _currentCorralCounts[key] ?? 0);
+      }
+      _storedCorralCounts = Map.from(_currentCorralCounts);
+    } catch (e) {
+      debugPrint('Error saving corral counts: $e');
+    }
+  }
+
+  /// Actualizar cantidades desde StatisticsProvider y detectar cambios
+  Future<void> updateCorralCounts(Map<String, int> newCounts) async {
+    _currentCorralCounts = Map.from(newCounts);
+
+    // Detectar aumentos en cada corral
+    for (String rangoEdad in newCounts.keys) {
+      final currentCount = newCounts[rangoEdad] ?? 0;
+      final storedCount = _storedCorralCounts[rangoEdad] ?? 0;
+
+      // Si hay un aumento, activar animación de puertas
+      if (currentCount > storedCount) {
+        await _activateGateAnimation(rangoEdad);
+      }
+    }
+
+    // Guardar las nuevas cantidades
+    await saveCorralCounts();
+    notifyListeners();
+  }
+
+  /// Activar animación de puertas para un rango de edad específico
+  Future<void> _activateGateAnimation(String rangoEdad) async {
+    final gatePrefix = _rangoToGate[rangoEdad];
+    if (gatePrefix == null) return;
+
+    final gateKey = '${gatePrefix}1_${gatePrefix}2';
+
+    // Cancelar timer anterior si existe
+    _gateAnimationTimers[gateKey]?.cancel();
+
+    // Marcar puertas como animándose
+    _animatingGates[gateKey] = true;
+    notifyListeners();
+
+    // Configurar timer para restaurar estado después de 10 segundos
+    _gateAnimationTimers[gateKey] = Timer(const Duration(seconds: 10), () {
+      _animatingGates[gateKey] = false;
+      notifyListeners();
+    });
+  }
+
+  /// Verificar si una puerta específica está en animación
+  bool isGateAnimating(String gateName) {
+    // Determinar el key basado en el nombre de la puerta
+    String gateKey = '';
+    if (gateName.startsWith('A')) {
+      gateKey = 'A1_A2';
+    } else if (gateName.startsWith('B')) {
+      gateKey = 'B1_B2';
+    } else if (gateName.startsWith('C')) {
+      gateKey = 'C1_C2';
+    } else if (gateName.startsWith('D')) {
+      gateKey = 'D1_D2';
+    } else if (gateName.startsWith('E')) {
+      gateKey = 'E1_E2';
+    } else if (gateName.startsWith('F')) {
+      gateKey = 'F1_F2';
+    } else if (gateName.startsWith('G')) {
+      gateKey = 'G1_G2';
+    }
+
+    return _animatingGates[gateKey] ?? false;
+  }
+
+  /// Obtener color de puerta considerando animaciones
+  Color getGateColor(String gateName) {
+    if (isGateAnimating(gateName)) {
+      // Durante animación: A1,B1,C1,D1,E1,F1,G1 -> verde, A2,B2,C2,D2,E2,F2,G2 -> rojo
+      if (gateName.endsWith('1')) {
+        return Colors.green; // Puerta tipo 1 se vuelve verde
+      } else {
+        return Colors.red; // Puerta tipo 2 se vuelve roja
+      }
+    } else {
+      // Estado normal: A1,B1,C1,D1,E1,F1,G1 -> rojo, A2,B2,C2,D2,E2,F2,G2 -> verde
+      if (gateName.endsWith('1')) {
+        return Colors.red; // Puerta tipo 1 es roja por defecto
+      } else {
+        return Colors.green; // Puerta tipo 2 es verde por defecto
+      }
+    }
+  }
+
+  /// Limpiar todos los timers al dispose
+  @override
+  void dispose() {
+    for (Timer? timer in _gateAnimationTimers.values) {
+      timer?.cancel();
+    }
+    _gateAnimationTimers.clear();
+    super.dispose();
   }
 }
 

@@ -22,10 +22,10 @@ class CattlePensPage extends StatelessWidget {
           ),
           const SizedBox(height: 15),
 
-          // Control para alternar líneas del corral
+          /* // Control para alternar líneas del corral
           _buildToggleLineControl(context),
           const SizedBox(height: 10),
-
+          */
           // Contenedores en columna
           Expanded(
             child: SingleChildScrollView(
@@ -221,7 +221,7 @@ class CattlePensPage extends StatelessWidget {
     );
   }
 
-  Widget _buildToggleLineControl(BuildContext context) {
+  /*   Widget _buildToggleLineControl(BuildContext context) {
     return Consumer<CattlePensProvider>(
       builder: (context, corralProvider, child) {
         return Column(
@@ -268,10 +268,10 @@ class CattlePensPage extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
           ],
         );
       },
     );
-  }
+  } */
 }

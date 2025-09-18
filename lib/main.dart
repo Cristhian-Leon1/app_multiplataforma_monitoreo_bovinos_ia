@@ -32,8 +32,18 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CattleIdentificationProvider()),
-        ChangeNotifierProvider(create: (_) => StatisticsProvider()),
-        ChangeNotifierProvider(create: (_) => CattlePensProvider()),
+        ChangeNotifierProvider(
+          create: (_) => CattlePensProvider()..initialize(),
+        ),
+        ChangeNotifierProxyProvider<CattlePensProvider, StatisticsProvider>(
+          create: (context) => StatisticsProvider(),
+          update: (context, cattlePensProvider, statisticsProvider) {
+            if (statisticsProvider != null) {
+              statisticsProvider.setCattlePensProvider(cattlePensProvider);
+            }
+            return statisticsProvider ?? StatisticsProvider();
+          },
+        ),
       ],
       child: MaterialApp(
         title: AppConstants.appName,

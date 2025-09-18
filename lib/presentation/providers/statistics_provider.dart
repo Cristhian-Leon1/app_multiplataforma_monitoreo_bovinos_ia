@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/services/finca_service.dart';
 import '../../data/services/api_test_service.dart';
 import '../../data/models/finca_model.dart';
+import 'cattle_pens_provider.dart';
 
 /// Provider para manejar el estado de la página de estadísticas
 /// Gestiona las fincas del usuario y las estadísticas relacionadas
@@ -28,6 +29,9 @@ class StatisticsProvider extends ChangeNotifier {
 
   // Filtro y promedios por raza
   String? _selectedRazaFilter;
+
+  // Referencia al provider de corrales para notificar cambios
+  CattlePensProvider? _cattlePensProvider;
   Map<String, double> _pesoPromedioByRangoEdad = {};
   Map<String, double> _alturaPromedioByRangoEdad = {};
   List<BovinoWithLastMedicion> _bovinos = []; // Para almacenar los bovinos
@@ -53,6 +57,11 @@ class StatisticsProvider extends ChangeNotifier {
   Map<String, double> get alturaPromedioByRangoEdad =>
       _alturaPromedioByRangoEdad;
   List<String> get availableRazas => _totalRazas.keys.toList();
+
+  /// Establecer referencia al provider de corrales
+  void setCattlePensProvider(CattlePensProvider cattlePensProvider) {
+    _cattlePensProvider = cattlePensProvider;
+  }
 
   /// Limpiar errores
   void clearError() {
@@ -244,6 +253,11 @@ class StatisticsProvider extends ChangeNotifier {
       }
 
       _safeNotifyListeners();
+
+      // Notificar al CattlePensProvider sobre los cambios en rangos de edad
+      if (_cattlePensProvider != null) {
+        await _cattlePensProvider!.updateCorralCounts(_totalRangosEdad);
+      }
     } catch (e) {
       // Si hay error al cargar estadísticas específicas, usar valores por defecto
       _resetStatistics();
