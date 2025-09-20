@@ -1,4 +1,5 @@
 import 'package:app_multiplataforma_monitoreo_bovinos_ia/presentation/widgets/card_widget.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -219,7 +220,9 @@ class _StatisticsPageState extends State<StatisticsPage> {
         if (statisticsProvider.selectedFinca != null)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: kIsWeb
+                ? const EdgeInsets.all(12) // Padding reducido en web
+                : const EdgeInsets.all(20), // Padding original en móvil
             margin: const EdgeInsets.only(left: 7, right: 7, bottom: 10),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
@@ -240,20 +243,21 @@ class _StatisticsPageState extends State<StatisticsPage> {
               children: [
                 // Icono de la finca
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: kIsWeb
+                      ? const EdgeInsets.all(8) // Padding reducido en web
+                      : const EdgeInsets.all(12), // Padding original en móvil
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(50),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.agriculture,
                     color: Colors.white,
-                    size: 32,
+                    size: kIsWeb ? 24 : 32, // Icono más pequeño en web
                   ),
                 ),
 
-                const SizedBox(width: 16),
-
+                SizedBox(width: kIsWeb ? 12 : 16), // Espaciado reducido en web
                 // Información de la finca
                 Expanded(
                   child: Column(
@@ -263,15 +267,23 @@ class _StatisticsPageState extends State<StatisticsPage> {
                         'Finca:',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: kIsWeb
+                              ? 12
+                              : null, // Texto más pequeño en web
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(
+                        height: kIsWeb ? 2 : 4,
+                      ), // Espaciado reducido en web
                       Text(
                         statisticsProvider.selectedFinca!.nombre,
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
+                              fontSize: kIsWeb
+                                  ? 18
+                                  : null, // Título más pequeño en web
                             ),
                       ),
                     ],
@@ -281,12 +293,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 // Botón de eliminar finca
                 IconButton(
                   onPressed: () => _showDeleteConfirmation(context),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.delete_outline,
                     color: Colors.white,
-                    size: 28,
+                    size: kIsWeb ? 20 : 28, // Icono más pequeño en web
                   ),
                   tooltip: 'Eliminar finca',
+                  padding: kIsWeb
+                      ? const EdgeInsets.all(4) // Padding reducido en web
+                      : const EdgeInsets.all(8), // Padding original en móvil
                 ),
               ],
             ),
@@ -350,23 +365,51 @@ class _StatisticsPageState extends State<StatisticsPage> {
                     ),
                   ),
 
-                  // Gráficas de distribución
-                  StatisticsChartsWidget(
-                    totalRazas: statisticsProvider.totalRazas,
-                    totalSexos: statisticsProvider.totalSexos,
-                    totalRangosEdad: statisticsProvider.totalRangosEdad,
-                  ),
+                  // Gráficas responsivas - Grid en web ancho, columna en móvil
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Verificar si es web y ancho mayor a 700
+                      final isWebWide = kIsWeb && constraints.maxWidth > 700;
 
-                  // Filtro y gráficas por raza
-                  BreedFilterChartsWidget(
-                    availableRazas: statisticsProvider.availableRazas,
-                    selectedRaza: statisticsProvider.selectedRazaFilter,
-                    pesoPromedioByRangoEdad:
-                        statisticsProvider.pesoPromedioByRangoEdad,
-                    alturaPromedioByRangoEdad:
-                        statisticsProvider.alturaPromedioByRangoEdad,
-                    onRazaChanged: (raza) {
-                      statisticsProvider.setRazaFilter(raza);
+                      if (isWebWide) {
+                        // Layout en grid para web ancho
+                        return Column(
+                          children: [
+                            // Grid para StatisticsChartsWidget (2 columnas)
+                            _buildStatisticsChartsGrid(statisticsProvider),
+                            const SizedBox(height: 20),
+                            // Grid para BreedFilterChartsWidget (2 columnas)
+                            _buildBreedFilterChartsGrid(statisticsProvider),
+                          ],
+                        );
+                      } else {
+                        // Layout original para móvil
+                        return Column(
+                          children: [
+                            // Gráficas de distribución
+                            StatisticsChartsWidget(
+                              totalRazas: statisticsProvider.totalRazas,
+                              totalSexos: statisticsProvider.totalSexos,
+                              totalRangosEdad:
+                                  statisticsProvider.totalRangosEdad,
+                            ),
+
+                            // Filtro y gráficas por raza
+                            BreedFilterChartsWidget(
+                              availableRazas: statisticsProvider.availableRazas,
+                              selectedRaza:
+                                  statisticsProvider.selectedRazaFilter,
+                              pesoPromedioByRangoEdad:
+                                  statisticsProvider.pesoPromedioByRangoEdad,
+                              alturaPromedioByRangoEdad:
+                                  statisticsProvider.alturaPromedioByRangoEdad,
+                              onRazaChanged: (raza) {
+                                statisticsProvider.setRazaFilter(raza);
+                              },
+                            ),
+                          ],
+                        );
+                      }
                     },
                   ),
 
@@ -406,6 +449,32 @@ class _StatisticsPageState extends State<StatisticsPage> {
           ],
         );
       },
+    );
+  }
+
+  /// Construye el grid para StatisticsChartsWidget en web ancho
+  Widget _buildStatisticsChartsGrid(StatisticsProvider statisticsProvider) {
+    // Necesitamos revisar la estructura del StatisticsChartsWidget para dividirlo en gráficas individuales
+    return StatisticsChartsWidget(
+      totalRazas: statisticsProvider.totalRazas,
+      totalSexos: statisticsProvider.totalSexos,
+      totalRangosEdad: statisticsProvider.totalRangosEdad,
+      useGridLayout: true, // Parámetro para indicar que use layout de grid
+    );
+  }
+
+  /// Construye el grid para BreedFilterChartsWidget en web ancho
+  Widget _buildBreedFilterChartsGrid(StatisticsProvider statisticsProvider) {
+    // Necesitamos revisar la estructura del BreedFilterChartsWidget para dividirlo en gráficas individuales
+    return BreedFilterChartsWidget(
+      availableRazas: statisticsProvider.availableRazas,
+      selectedRaza: statisticsProvider.selectedRazaFilter,
+      pesoPromedioByRangoEdad: statisticsProvider.pesoPromedioByRangoEdad,
+      alturaPromedioByRangoEdad: statisticsProvider.alturaPromedioByRangoEdad,
+      onRazaChanged: (raza) {
+        statisticsProvider.setRazaFilter(raza);
+      },
+      useGridLayout: true, // Parámetro para indicar que use layout de grid
     );
   }
 }

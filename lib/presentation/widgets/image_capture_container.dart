@@ -37,8 +37,18 @@ class ImageCaptureContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calcular altura según la plataforma y el ancho de pantalla
+    double containerHeight = 200; // Altura por defecto
+
+    if (kIsWeb) {
+      final screenWidth = MediaQuery.of(context).size.width;
+      if (screenWidth > 700) {
+        containerHeight = 400; // Doble de altura en web con pantallas anchas
+      }
+    }
+
     return Container(
-      height: 200,
+      height: containerHeight,
       decoration: BoxDecoration(
         color: image == null
             ? const Color(0xFF4CAF50).withValues(alpha: 0.1)

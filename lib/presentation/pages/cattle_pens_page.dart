@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../providers/statistics_provider.dart';
 import '../providers/cattle_pens_provider.dart';
@@ -11,38 +12,79 @@ class CattlePensPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
-      child: Column(
-        children: [
-          Text(
-            'Monitorea tus corrales en tiempo real.',
-            textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 15),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Verificar si es web y ancho mayor a 700
+          final isWebWide = kIsWeb && constraints.maxWidth > 700;
 
-          /* // Control para alternar líneas del corral
-          _buildToggleLineControl(context),
-          const SizedBox(height: 10),
-          */
-          // Contenedores en columna
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildCorralContainer(
+          if (isWebWide) {
+            // Layout para web con pantalla ancha (sin scroll)
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Título
+                Text(
+                  'Monitorea tus corrales en tiempo real.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
                     context,
-                    imagePath: 'assets/images/corral_transparente.png',
+                  ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                ),
+                // Fila de contenedores (expandida para usar el espacio disponible)
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Contenedor de imagen del corral
+                      Expanded(
+                        flex: 1,
+                        child: _buildCorralContainer(
+                          context,
+                          imagePath: 'assets/images/corral_transparente.png',
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      // Contenedor de información
+                      Expanded(
+                        flex: 1,
+                        child: _buildContentCattlePens(context, height: 365),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-
-                  _buildContentCattlePens(context),
-                ],
-              ),
-            ),
-          ),
-        ],
+                ),
+              ],
+            );
+          } else {
+            // Layout original para móvil y pantallas pequeñas (con scroll)
+            return Column(
+              children: [
+                Text(
+                  'Monitorea tus corrales en tiempo real.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 15),
+                // Contenedores responsivos
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        _buildCorralContainer(
+                          context,
+                          imagePath: 'assets/images/corral_transparente.png',
+                        ),
+                        const SizedBox(height: 20),
+                        _buildContentCattlePens(context),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+        },
       ),
     );
   }
@@ -70,35 +112,30 @@ class CattlePensPage extends StatelessWidget {
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              // Calcular el tamaño real de la imagen dentro del contenedor
-              final containerSize = constraints.biggest;
-              final imageSize =
-                  containerSize.width; // Asumiendo que es cuadrado
-
-              // Obtener las líneas escaladas según el tamaño actual
-              final scaledLines = corralProvider.getScaledLines(imageSize);
+              // Obtener las coordenadas originales (sin escalar)
+              final originalLines = corralProvider.getOriginalLines();
 
               // Generar puntos de ganado basado en los datos de estadísticas
-              final cattlePoints = corralProvider.generateCattlePoints(
-                statisticsProvider.totalRangosEdad,
-                imageSize,
-              );
+              final originalCattlePoints = corralProvider
+                  .generateOriginalCattlePoints(
+                    statisticsProvider.totalRangosEdad,
+                  );
 
-              // Obtener las puertas escaladas
-              final gates = corralProvider.getScaledGates(imageSize);
+              // Obtener las puertas originales (sin escalar)
+              final originalGates = corralProvider.getOriginalGates();
 
               return ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: CorralWithLines(
                   imagePath: imagePath,
-                  lines: scaledLines,
+                  lines: originalLines,
                   showLines: corralProvider.showCorralLines,
-                  cattlePoints: cattlePoints,
+                  cattlePoints: originalCattlePoints,
                   showCattlePoints: true,
-                  gates: gates,
+                  gates: originalGates,
                   showGates: true,
-                  width: containerSize.width,
-                  height: containerSize.height,
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
                 ),
               );
             },
@@ -108,13 +145,14 @@ class CattlePensPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContentCattlePens(BuildContext context) {
+  Widget _buildContentCattlePens(BuildContext context, {double? height}) {
     return Consumer<StatisticsProvider>(
       builder: (context, provider, child) {
         final rangosEdad = provider.totalRangosEdad;
 
         return Container(
           width: double.infinity,
+          height: height, // Usar altura específica cuando se proporcione
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -132,68 +170,131 @@ class CattlePensPage extends StatelessWidget {
               ),
             ],
           ),
-          child: Column(
-            children: [
-              // Título centrado
-              Text(
-                'Cantidad de bovinos en corrales',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2E7D32),
+          child: height != null
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Título centrado
+                    Text(
+                      'Cantidad de bovinos en corrales',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF2E7D32),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    // Lista de corrales con scroll si es necesario
+                    SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildCorralRow(
+                            context,
+                            'Corral 1 (0-6 meses):',
+                            '${rangosEdad['0-6 meses'] ?? 0}',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildCorralRow(
+                            context,
+                            'Corral 2 (7-12 meses):',
+                            '${rangosEdad['7-12 meses'] ?? 0}',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildCorralRow(
+                            context,
+                            'Corral 3 (13-24 meses):',
+                            '${rangosEdad['13-24 meses'] ?? 0}',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildCorralRow(
+                            context,
+                            'Corral 4 (25-36 meses):',
+                            '${rangosEdad['25-36 meses'] ?? 0}',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildCorralRow(
+                            context,
+                            'Corral 5 (37-48 meses):',
+                            '${rangosEdad['37-48 meses'] ?? 0}',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildCorralRow(
+                            context,
+                            'Corral 6 (49-60 meses):',
+                            '${rangosEdad['49-60 meses'] ?? 0}',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildCorralRow(
+                            context,
+                            'Corral 7 (mas de 5 años):',
+                            '${rangosEdad['Mayores a 60 meses'] ?? 0}',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    // Título centrado
+                    Text(
+                      'Cantidad de bovinos en corrales',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF2E7D32),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    // Lista de corrales
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildCorralRow(
+                          context,
+                          'Corral 1 (0-6 meses):',
+                          '${rangosEdad['0-6 meses'] ?? 0}',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCorralRow(
+                          context,
+                          'Corral 2 (7-12 meses):',
+                          '${rangosEdad['7-12 meses'] ?? 0}',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCorralRow(
+                          context,
+                          'Corral 3 (13-24 meses):',
+                          '${rangosEdad['13-24 meses'] ?? 0}',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCorralRow(
+                          context,
+                          'Corral 4 (25-36 meses):',
+                          '${rangosEdad['25-36 meses'] ?? 0}',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCorralRow(
+                          context,
+                          'Corral 5 (37-48 meses):',
+                          '${rangosEdad['37-48 meses'] ?? 0}',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCorralRow(
+                          context,
+                          'Corral 6 (49-60 meses):',
+                          '${rangosEdad['49-60 meses'] ?? 0}',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildCorralRow(
+                          context,
+                          'Corral 7 (mas de 5 años):',
+                          '${rangosEdad['Mayores a 60 meses'] ?? 0}',
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-
-              // Lista de corrales
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCorralRow(
-                    context,
-                    'Corral 1 (0-6 meses):',
-                    '${rangosEdad['0-6 meses'] ?? 0}',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCorralRow(
-                    context,
-                    'Corral 2 (7-12 meses):',
-                    '${rangosEdad['7-12 meses'] ?? 0}',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCorralRow(
-                    context,
-                    'Corral 3 (13-24 meses):',
-                    '${rangosEdad['13-24 meses'] ?? 0}',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCorralRow(
-                    context,
-                    'Corral 4 (25-36 meses):',
-                    '${rangosEdad['25-36 meses'] ?? 0}',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCorralRow(
-                    context,
-                    'Corral 5 (37-48 meses):',
-                    '${rangosEdad['37-48 meses'] ?? 0}',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCorralRow(
-                    context,
-                    'Corral 6 (49-60 meses):',
-                    '${rangosEdad['49-60 meses'] ?? 0}',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCorralRow(
-                    context,
-                    'Corral 7 (mas de 5 años):',
-                    '${rangosEdad['Mayores a 60 meses'] ?? 0}',
-                  ),
-                ],
-              ),
-            ],
-          ),
         );
       },
     );

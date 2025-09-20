@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -6,13 +7,64 @@ class StatisticsChartsWidget extends StatelessWidget {
   final Map<String, int> totalRazas;
   final Map<String, int> totalSexos;
   final Map<String, int> totalRangosEdad;
+  final bool useGridLayout;
 
   const StatisticsChartsWidget({
     super.key,
     required this.totalRazas,
     required this.totalSexos,
     required this.totalRangosEdad,
+    this.useGridLayout = false,
   });
+
+  /// Calcula el valor máximo del eje Y basado en los datos + 10% (redondeado hacia arriba)
+  double _calculateMaxY(Map<String, int> data) {
+    if (data.isEmpty) return 10.0;
+
+    final maxValue = data.values.reduce((a, b) => a > b ? a : b);
+    final maxWithBuffer = maxValue * 1.1; // 10% mayor que el valor más alto
+
+    // Redondear hacia arriba para obtener un número entero limpio
+    return maxWithBuffer.ceil().toDouble();
+  }
+
+  /// Calcula la altura del contenedor según la plataforma
+  double _getChartHeight() {
+    return kIsWeb ? 200 : 300; // Altura reducida en web
+  }
+
+  /// Calcula el intervalo apropiado para la grilla horizontal
+  double _calculateInterval(double maxY) {
+    if (maxY <= 10) return 2;
+    if (maxY <= 20) return 5;
+    if (maxY <= 50) return 10;
+    if (maxY <= 100) return 20;
+
+    // Para valores mayores, calcular un intervalo que sea un número entero limpio
+    final roughInterval = maxY / 5;
+
+    // Redondear a un número "bonito" (múltiplo de 5, 10, 25, etc.)
+    if (roughInterval <= 5) return 5;
+    if (roughInterval <= 10) return 10;
+    if (roughInterval <= 25) return 25;
+    if (roughInterval <= 50) return 50;
+    if (roughInterval <= 100) return 100;
+
+    // Para valores muy grandes, redondear al múltiplo de 100 más cercano
+    return (roughInterval / 100).ceil() * 100;
+  }
+
+  /// Formatea los valores del eje Y para mostrar solo números enteros válidos
+  String _formatYAxisValue(double value, double maxY, double interval) {
+    final intValue = value.toInt();
+
+    // Solo mostrar el valor si es un múltiplo del intervalo y no excede el máximo
+    if (value % interval == 0 && value <= maxY) {
+      return intValue.toString();
+    }
+
+    return ''; // No mostrar nada si no cumple las condiciones
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +87,91 @@ class StatisticsChartsWidget extends StatelessWidget {
           ),
         ),
 
+        // Layout condicional: Grid para web ancho, Column para móvil
+        if (useGridLayout)
+          _buildGridLayout(context)
+        else
+          _buildColumnLayout(context),
+      ],
+    );
+  }
+
+  /// Layout en filas con Expanded para web ancho (mejor proporción visual)
+  Widget _buildGridLayout(BuildContext context) {
+    final charts = <Widget>[];
+
+    // Agregar gráficas disponibles
+    if (totalRazas.isNotEmpty) {
+      charts.add(
+        _buildChartContainer(
+          context,
+          title: 'Distribución por Razas',
+          icon: Icons.category,
+          chart: _buildRazasChart(context),
+        ),
+      );
+    }
+
+    if (totalSexos.isNotEmpty) {
+      charts.add(
+        _buildChartContainer(
+          context,
+          title: 'Distribución por Sexos',
+          iconWidget: SvgPicture.asset(
+            'assets/icons/icono_generos.svg',
+            width: 21,
+            height: 21,
+            colorFilter: const ColorFilter.mode(
+              Color(0xFF4CAF50),
+              BlendMode.srcIn,
+            ),
+          ),
+          chart: _buildSexosChart(context),
+        ),
+      );
+    }
+
+    if (totalRangosEdad.isNotEmpty) {
+      charts.add(
+        _buildChartContainer(
+          context,
+          title: 'Distribución por Rangos de Edad',
+          icon: Icons.schedule,
+          chart: _buildRangosEdadChart(context),
+        ),
+      );
+    }
+
+    // Organizar en filas de máximo 2 columnas
+    final rows = <Widget>[];
+
+    for (int i = 0; i < charts.length; i += 2) {
+      final leftChart = charts[i];
+      final rightChart = i + 1 < charts.length ? charts[i + 1] : null;
+
+      rows.add(
+        Row(
+          children: [
+            Expanded(child: leftChart),
+            const SizedBox(width: 16),
+            Expanded(child: rightChart ?? const SizedBox.shrink()),
+          ],
+        ),
+      );
+
+      // Agregar espacio entre filas si no es la última
+      if (i + 2 < charts.length) {
+        rows.add(const SizedBox(height: 24));
+      }
+    }
+
+    return Column(children: rows);
+  }
+
+  /// Layout en columna para móvil y pantallas pequeñas
+  Widget _buildColumnLayout(BuildContext context) {
+    return Column(
+      children: [
         // Gráfica de Razas
         if (totalRazas.isNotEmpty) ...[
           _buildChartContainer(
@@ -129,7 +266,7 @@ class StatisticsChartsWidget extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Gráfica
-          SizedBox(height: 300, child: chart),
+          SizedBox(height: _getChartHeight(), child: chart),
         ],
       ),
     );
@@ -156,7 +293,9 @@ class StatisticsChartsWidget extends StatelessWidget {
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: 50, // Rango fijo de 0 a 60 para razas
+        maxY: _calculateMaxY(
+          totalRazas,
+        ), // Rango dinámico basado en datos + 10%
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
@@ -211,8 +350,14 @@ class StatisticsChartsWidget extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (double value, TitleMeta meta) {
+                final maxY = _calculateMaxY(totalRazas);
+                final interval = _calculateInterval(maxY);
+                final formattedValue = _formatYAxisValue(value, maxY, interval);
+
+                if (formattedValue.isEmpty) return const SizedBox.shrink();
+
                 return Text(
-                  value.toInt().toString(),
+                  formattedValue,
                   style: const TextStyle(
                     color: Colors.grey,
                     fontWeight: FontWeight.bold,
@@ -220,7 +365,7 @@ class StatisticsChartsWidget extends StatelessWidget {
                   ),
                 );
               },
-              reservedSize: 25,
+              reservedSize: 15,
             ),
           ),
         ),
@@ -253,7 +398,9 @@ class StatisticsChartsWidget extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: 10, // Intervalos de 10 para el rango 0-60
+          horizontalInterval: _calculateInterval(
+            _calculateMaxY(totalRazas),
+          ), // Intervalo dinámico
           getDrawingHorizontalLine: (value) {
             return FlLine(
               color: Colors.grey.withValues(alpha: 0.3),
@@ -278,7 +425,9 @@ class StatisticsChartsWidget extends StatelessWidget {
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: 50, // Rango fijo de 0 a 100 para sexos
+        maxY: _calculateMaxY(
+          totalSexos,
+        ), // Rango dinámico basado en datos + 10%
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
@@ -314,7 +463,7 @@ class StatisticsChartsWidget extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.grey,
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: 12,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -327,8 +476,14 @@ class StatisticsChartsWidget extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (double value, TitleMeta meta) {
+                final maxY = _calculateMaxY(totalSexos);
+                final interval = _calculateInterval(maxY);
+                final formattedValue = _formatYAxisValue(value, maxY, interval);
+
+                if (formattedValue.isEmpty) return const SizedBox.shrink();
+
                 return Text(
-                  value.toInt().toString(),
+                  formattedValue,
                   style: const TextStyle(
                     color: Colors.grey,
                     fontWeight: FontWeight.bold,
@@ -336,7 +491,7 @@ class StatisticsChartsWidget extends StatelessWidget {
                   ),
                 );
               },
-              reservedSize: 25,
+              reservedSize: 15,
             ),
           ),
         ),
@@ -369,7 +524,9 @@ class StatisticsChartsWidget extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: 10, // Intervalos de 20 para el rango 0-100
+          horizontalInterval: _calculateInterval(
+            _calculateMaxY(totalSexos),
+          ), // Intervalo dinámico
           getDrawingHorizontalLine: (value) {
             return FlLine(
               color: Colors.grey.withValues(alpha: 0.3),
@@ -420,10 +577,12 @@ class StatisticsChartsWidget extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 300,
+      height: _getChartHeight(),
       child: BarChart(
         BarChartData(
-          maxY: 20, // Rango de 0 a 20 para rangos de edad
+          maxY: _calculateMaxY(
+            totalRangosEdad,
+          ), // Rango dinámico basado en datos + 10%
           barTouchData: BarTouchData(
             touchTooltipData: BarTouchTooltipData(
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -445,11 +604,20 @@ class StatisticsChartsWidget extends StatelessWidget {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 25,
-                interval: 5, // Intervalos de 5 para el rango 0-20
+                reservedSize: 15,
                 getTitlesWidget: (value, meta) {
+                  final maxY = _calculateMaxY(totalRangosEdad);
+                  final interval = _calculateInterval(maxY);
+                  final formattedValue = _formatYAxisValue(
+                    value,
+                    maxY,
+                    interval,
+                  );
+
+                  if (formattedValue.isEmpty) return const SizedBox.shrink();
+
                   return Text(
-                    value.toInt().toString(),
+                    formattedValue,
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                   );
                 },
@@ -556,7 +724,9 @@ class StatisticsChartsWidget extends StatelessWidget {
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
-            horizontalInterval: 5, // Intervalos de 5 para el rango 0-20
+            horizontalInterval: _calculateInterval(
+              _calculateMaxY(totalRangosEdad),
+            ), // Intervalo dinámico
             getDrawingHorizontalLine: (value) {
               return FlLine(
                 color: Colors.grey.withValues(alpha: 0.3),

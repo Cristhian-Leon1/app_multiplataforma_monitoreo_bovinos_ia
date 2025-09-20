@@ -8,6 +8,7 @@ class BreedFilterChartsWidget extends StatelessWidget {
   final Map<String, double> pesoPromedioByRangoEdad;
   final Map<String, double> alturaPromedioByRangoEdad;
   final Function(String?) onRazaChanged;
+  final bool useGridLayout;
 
   const BreedFilterChartsWidget({
     super.key,
@@ -16,6 +17,7 @@ class BreedFilterChartsWidget extends StatelessWidget {
     required this.pesoPromedioByRangoEdad,
     required this.alturaPromedioByRangoEdad,
     required this.onRazaChanged,
+    this.useGridLayout = false,
   });
 
   @override
@@ -42,38 +44,110 @@ class BreedFilterChartsWidget extends StatelessWidget {
         // Filtro de razas
         _buildRazaFilter(context),
 
-        // Gráficas de líneas (solo si hay una raza seleccionada)
+        // Layout condicional: Grid para web ancho, Column para móvil
         if (selectedRaza != null) ...[
           const SizedBox(height: 24),
+          if (useGridLayout)
+            _buildGridLayout(context)
+          else
+            _buildColumnLayout(context),
+        ],
+      ],
+    );
+  }
 
-          // Gráfica de peso promedio
-          if (pesoPromedioByRangoEdad.isNotEmpty) ...[
-            _buildLineChartContainer(
-              context,
-              title: 'Peso Promedio por Edad - $selectedRaza',
-              iconWidget: SvgPicture.asset(
-                'assets/icons/icono_peso.svg',
-                width: 20,
-                height: 20,
-                colorFilter: const ColorFilter.mode(
-                  Color(0xFF4CAF50),
-                  BlendMode.srcIn,
-                ),
+  /// Layout en filas con Expanded para web ancho (mejor proporción visual)
+  Widget _buildGridLayout(BuildContext context) {
+    final charts = <Widget>[];
+
+    // Agregar gráficas disponibles
+    if (pesoPromedioByRangoEdad.isNotEmpty) {
+      charts.add(
+        _buildLineChartContainer(
+          context,
+          title: 'Peso Promedio por Edad - $selectedRaza',
+          iconWidget: SvgPicture.asset(
+            'assets/icons/icono_peso.svg',
+            width: 20,
+            height: 20,
+            colorFilter: const ColorFilter.mode(
+              Color(0xFF4CAF50),
+              BlendMode.srcIn,
+            ),
+          ),
+          chart: _buildPesoChart(context),
+        ),
+      );
+    }
+
+    if (alturaPromedioByRangoEdad.isNotEmpty) {
+      charts.add(
+        _buildLineChartContainer(
+          context,
+          title: 'Altura Promedio por Edad - $selectedRaza',
+          icon: Icons.height,
+          chart: _buildAlturaChart(context),
+        ),
+      );
+    }
+
+    // Si no hay gráficas, retornar vacío
+    if (charts.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Si solo hay una gráfica, mostrarla en una fila centrada
+    if (charts.length == 1) {
+      return Row(
+        children: [
+          Expanded(child: charts[0]),
+          const SizedBox(width: 16),
+          const Expanded(child: SizedBox.shrink()), // Espacio vacío
+        ],
+      );
+    }
+
+    // Si hay 2 gráficas, mostrarlas lado a lado
+    return Row(
+      children: [
+        Expanded(child: charts[0]),
+        const SizedBox(width: 16),
+        Expanded(child: charts[1]),
+      ],
+    );
+  }
+
+  /// Layout en columna para móvil y pantallas pequeñas
+  Widget _buildColumnLayout(BuildContext context) {
+    return Column(
+      children: [
+        // Gráfica de peso promedio
+        if (pesoPromedioByRangoEdad.isNotEmpty) ...[
+          _buildLineChartContainer(
+            context,
+            title: 'Peso Promedio por Edad - $selectedRaza',
+            iconWidget: SvgPicture.asset(
+              'assets/icons/icono_peso.svg',
+              width: 20,
+              height: 20,
+              colorFilter: const ColorFilter.mode(
+                Color(0xFF4CAF50),
+                BlendMode.srcIn,
               ),
-              chart: _buildPesoChart(context),
             ),
-            const SizedBox(height: 24),
-          ],
+            chart: _buildPesoChart(context),
+          ),
+          const SizedBox(height: 24),
+        ],
 
-          // Gráfica de altura promedio
-          if (alturaPromedioByRangoEdad.isNotEmpty) ...[
-            _buildLineChartContainer(
-              context,
-              title: 'Altura Promedio por Edad - $selectedRaza',
-              icon: Icons.height,
-              chart: _buildAlturaChart(context),
-            ),
-          ],
+        // Gráfica de altura promedio
+        if (alturaPromedioByRangoEdad.isNotEmpty) ...[
+          _buildLineChartContainer(
+            context,
+            title: 'Altura Promedio por Edad - $selectedRaza',
+            icon: Icons.height,
+            chart: _buildAlturaChart(context),
+          ),
         ],
       ],
     );
@@ -268,12 +342,12 @@ class BreedFilterChartsWidget extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 50,
+              reservedSize: 40,
               interval: 100, // Mostrar cada 100 kg
               getTitlesWidget: (value, meta) {
                 return Text(
                   '${value.toInt()} kg',
-                  style: const TextStyle(fontSize: 12),
+                  style: const TextStyle(fontSize: 10),
                 );
               },
             ),
@@ -283,6 +357,7 @@ class BreedFilterChartsWidget extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 40,
+              interval: 1, // Mostrar solo una etiqueta por rango
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
                 if (index >= 0 && index < rangosOrdenados.length) {
@@ -290,7 +365,7 @@ class BreedFilterChartsWidget extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       _truncateRango(rangosOrdenados[index]),
-                      style: const TextStyle(fontSize: 11),
+                      style: const TextStyle(fontSize: 10),
                       textAlign: TextAlign.center,
                     ),
                   );
@@ -372,12 +447,12 @@ class BreedFilterChartsWidget extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 60,
+              reservedSize: 43,
               interval: 25, // Mostrar cada 25 cm
               getTitlesWidget: (value, meta) {
                 return Text(
                   '${value.toInt()} cm',
-                  style: const TextStyle(fontSize: 12),
+                  style: const TextStyle(fontSize: 10),
                 );
               },
             ),
@@ -387,6 +462,7 @@ class BreedFilterChartsWidget extends StatelessWidget {
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 40,
+              interval: 1, // Mostrar solo una etiqueta por rango
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
                 if (index >= 0 && index < rangosOrdenados.length) {
@@ -394,7 +470,7 @@ class BreedFilterChartsWidget extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       _truncateRango(rangosOrdenados[index]),
-                      style: const TextStyle(fontSize: 11),
+                      style: const TextStyle(fontSize: 10),
                       textAlign: TextAlign.center,
                     ),
                   );

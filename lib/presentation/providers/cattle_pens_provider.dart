@@ -845,6 +845,165 @@ class CattlePensProvider extends ChangeNotifier {
     _gateAnimationTimers.clear();
     super.dispose();
   }
+
+  /// Obtener las líneas originales (sin escalar) para que el widget haga el cálculo
+  List<LineConnection> getOriginalLines() {
+    // Retornar las líneas con coordenadas originales (basadas en imagen 1024x1024)
+    return []; // Las líneas no se están usando actualmente
+  }
+
+  /// Generar puntos de ganado originales (sin escalar) para que el widget haga el cálculo
+  Map<int, List<Offset>> generateOriginalCattlePoints(
+    Map<String, int> rangosEdad,
+  ) {
+    final cattlePoints = <int, List<Offset>>{};
+
+    // Mapear rangos de edad a corrales
+    final counts = [
+      rangosEdad['0-6 meses'] ?? 0, // Corral 1
+      rangosEdad['7-12 meses'] ?? 0, // Corral 2
+      rangosEdad['13-24 meses'] ?? 0, // Corral 3
+      rangosEdad['25-36 meses'] ?? 0, // Corral 4
+      rangosEdad['37-48 meses'] ?? 0, // Corral 5
+      rangosEdad['49-60 meses'] ?? 0, // Corral 6
+      rangosEdad['Mayores a 60 meses'] ?? 0, // Corral 7
+    ];
+
+    final corralPoints = [
+      _corral1Points,
+      _corral2Points,
+      _corral3Points,
+      _corral4Points,
+      _corral5Points,
+      _corral6Points,
+      _corral7Points,
+    ];
+
+    for (int i = 0; i < corralPoints.length; i++) {
+      final corralId = i + 1;
+      final count = counts[i];
+
+      if (count > 0) {
+        // Generar puntos para este corral (coordenadas originales)
+        final points = _generatePointsInPolygon(corralPoints[i], count);
+        cattlePoints[corralId] = points;
+      }
+    }
+
+    return cattlePoints;
+  }
+
+  /// Obtener las puertas originales (sin escalar) para que el widget haga el cálculo
+  List<GateConnection> getOriginalGates() {
+    // Puntos de referencia de los corrales (coordenadas originales)
+    final punto5 = _corral1Points[4]; // Punto 5 del Corral 1
+    final punto12 = _corral2Points[4]; // Punto 12 del Corral 2
+    final punto19 = _corral3Points[4]; // Punto 19 del Corral 3
+    final punto26 = _corral4Points[4]; // Punto 26 del Corral 4
+    final punto33 = _corral5Points[4]; // Punto 33 del Corral 5
+    final punto40 = _corral6Points[4]; // Punto 40 del Corral 6
+    final punto47 = _corral7Points[4]; // Punto 47 del Corral 7
+
+    return [
+      // Puertas del Corral 1 (A) - coordenadas originales
+      GateConnection(
+        start: punto5,
+        end: _punto50,
+        id: 'A1',
+        color: getGateColor('A1'),
+      ),
+      GateConnection(
+        start: punto5,
+        end: _punto51,
+        id: 'A2',
+        color: getGateColor('A2'),
+      ),
+
+      // Puertas del Corral 2 (B) - coordenadas originales
+      GateConnection(
+        start: punto12,
+        end: _punto52,
+        id: 'B1',
+        color: getGateColor('B1'),
+      ),
+      GateConnection(
+        start: punto12,
+        end: _punto53,
+        id: 'B2',
+        color: getGateColor('B2'),
+      ),
+
+      // Puertas del Corral 3 (C) - coordenadas originales
+      GateConnection(
+        start: punto19,
+        end: _punto54,
+        id: 'C1',
+        color: getGateColor('C1'),
+      ),
+      GateConnection(
+        start: punto19,
+        end: _punto55,
+        id: 'C2',
+        color: getGateColor('C2'),
+      ),
+
+      // Puertas del Corral 4 (D) - coordenadas originales
+      GateConnection(
+        start: punto26,
+        end: _punto56,
+        id: 'D1',
+        color: getGateColor('D1'),
+      ),
+      GateConnection(
+        start: punto26,
+        end: _punto57,
+        id: 'D2',
+        color: getGateColor('D2'),
+      ),
+
+      // Puertas del Corral 5 (E) - coordenadas originales
+      GateConnection(
+        start: punto33,
+        end: _punto58,
+        id: 'E1',
+        color: getGateColor('E1'),
+      ),
+      GateConnection(
+        start: punto33,
+        end: _punto59,
+        id: 'E2',
+        color: getGateColor('E2'),
+      ),
+
+      // Puertas del Corral 6 (F) - coordenadas originales
+      GateConnection(
+        start: punto40,
+        end: _punto60,
+        id: 'F1',
+        color: getGateColor('F1'),
+      ),
+      GateConnection(
+        start: punto40,
+        end: _punto61,
+        id: 'F2',
+        color: getGateColor('F2'),
+      ),
+
+      // Puertas del Corral 7 (G) - coordenadas originales
+      GateConnection(
+        start: punto47,
+        end: _punto62,
+        id: 'G1',
+        color: getGateColor('G1'),
+      ),
+      GateConnection(
+        start: punto47,
+        end: _punto63,
+        id: 'G2',
+        color: getGateColor('G2'),
+      ),
+    ];
+  }
 }
 
 /// Clase para representar una conexión entre dos puntos

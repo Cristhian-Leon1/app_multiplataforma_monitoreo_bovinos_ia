@@ -8,7 +8,7 @@ import '../models/pose_model.dart';
 
 /// Servicio para el análisis de pose de bovinos
 class PoseService {
-  static const String _baseUrl = 'https://e0669b9047b0.ngrok-free.app';
+  static const String _baseUrl = 'https://84b3b6c2c9dc.ngrok-free.app';
   static const String _predictEndpoint = '/predict/';
 
   static const Map<String, String> _headers = {
