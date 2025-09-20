@@ -5,6 +5,7 @@ class AppConstants {
   // URLs de API
   static const String apiBaseUrl = 'https://ashajaaia.onrender.com/api/v1';
   static const String authBaseUrl = '$apiBaseUrl/auth';
+  static const String imagesBaseUrl = '$apiBaseUrl/images';
 
   // Configuración de la aplicación
   static const String appName = 'Ashajaa AI';

@@ -398,12 +398,91 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Método público para limpiar errores
+  void clearError() {
+    _clearError();
+  }
+
   void _setToken(String token) {
     _userToken = token;
   }
 
   void _setUserData(UserModel data) {
     _userData = data;
+    notifyListeners(); // Notificar cambios para actualizar la UI
+  }
+
+  /// Subir imagen de perfil del usuario
+  Future<bool> uploadProfileImage(
+    String imageBase64, {
+    String? fileName,
+  }) async {
+    if (_userToken == null) {
+      _setError('No hay sesión activa');
+      return false;
+    }
+
+    if (_userData == null || _userData!.id.isEmpty) {
+      _setError('No se encontraron datos del usuario');
+      return false;
+    }
+
+    _setLoading(true);
+    _clearError();
+
+    // Generar filename específico si no se proporciona uno
+    final String finalFileName =
+        fileName ??
+        'profile_${_userData!.id}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+    try {
+      final uploadResponse = await ApiService.uploadProfileImage(
+        token: _userToken!,
+        imageBase64: imageBase64,
+        userId: _userData!.id, // Enviar el UUID del usuario
+        fileName: finalFileName,
+      );
+
+      // Si la imagen se subió exitosamente (independientemente del estado del perfil)
+      if (uploadResponse.publicUrl.isNotEmpty) {
+        // Actualizar los datos del usuario con la nueva imagen
+        if (_userData != null) {
+          final updatedPerfil = PerfilModel(
+            nombreCompleto: _userData!.perfil?.nombreCompleto,
+            imagenPerfil: uploadResponse.publicUrl,
+          );
+
+          final updatedUser = UserModel(
+            id: _userData!.id,
+            email: _userData!.email,
+            createdAt: _userData!.createdAt,
+            perfil: updatedPerfil,
+          );
+
+          _setUserData(updatedUser);
+
+          // Guardar en storage local
+          await StorageService.saveUserData(updatedUser);
+        }
+
+        // Si el perfil no se actualizó en la BD, mostrar advertencia pero considerar éxito
+        if (!uploadResponse.profileUpdated) {
+          _setError(
+            'Imagen subida exitosamente, pero no se pudo actualizar el perfil en la base de datos',
+          );
+        }
+
+        return true;
+      } else {
+        _setError('Error al subir la imagen');
+        return false;
+      }
+    } catch (e) {
+      _setError(e.toString());
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
   @override

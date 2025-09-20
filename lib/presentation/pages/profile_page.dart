@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/cattle_identification_provider.dart';
+import '../widgets/unfocus_wrapper.dart';
 import '../../core/app_localizations.dart';
+import '../../core/image_utils.dart';
 
 class ProfilePage extends StatelessWidget {
   final AuthProvider authProvider;
@@ -27,138 +29,308 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final userData = authProvider.userData;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Frase descriptiva
-        Padding(
-          padding: const EdgeInsets.only(bottom: 30),
-          child: Text(
-            'Gestiona tu información personal y configuraciones de la aplicación.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.grey[600],
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final userData = authProvider.userData;
 
-        // Información del usuario
-        Align(
-          alignment: Alignment.center,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
+        return UnfocusWrapper(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            scrollDirection: Axis.vertical,
             child: Column(
               children: [
-                // Avatar del usuario - imagen o inicial
-                CircleAvatar(
-                  radius: 60,
-                  backgroundColor: const Color(0xFF4CAF50),
-                  backgroundImage:
-                      userData?.perfil?.imagenPerfil != null &&
-                          userData!.perfil!.imagenPerfil!.isNotEmpty
-                      ? NetworkImage(userData.perfil!.imagenPerfil!)
-                      : null,
-                  child:
-                      (userData?.perfil?.imagenPerfil == null ||
-                          userData!.perfil!.imagenPerfil!.isEmpty)
-                      ? Text(
-                          (userData?.perfil?.nombreCompleto?.isNotEmpty ??
-                                  false)
-                              ? userData!.perfil!.nombreCompleto![0]
-                                    .toUpperCase()
-                              : userData?.email[0].toUpperCase() ?? 'U',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        )
-                      : null,
-                ),
-                const SizedBox(height: 15),
-                Text(
-                  _getUserDisplayName(authProvider),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2E7D32),
+                // Frase descriptiva
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 30),
+                  child: Text(
+                    'Gestiona tu información personal y configuraciones de la aplicación.',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.grey[600],
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  userData?.email ?? '',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+
+                // Información del usuario
+                Align(
+                  alignment: Alignment.center,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Column(
+                      children: [
+                        // Avatar del usuario - imagen o inicial
+                        Stack(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: CircleAvatar(
+                                radius: 60,
+                                backgroundColor: const Color(0xFF4CAF50),
+                                backgroundImage:
+                                    userData?.perfil?.imagenPerfil != null &&
+                                        userData!
+                                            .perfil!
+                                            .imagenPerfil!
+                                            .isNotEmpty
+                                    ? NetworkImage(
+                                        userData.perfil!.imagenPerfil!,
+                                      )
+                                    : null,
+                                child:
+                                    (userData?.perfil?.imagenPerfil == null ||
+                                        userData!.perfil!.imagenPerfil!.isEmpty)
+                                    ? Text(
+                                        (userData
+                                                    ?.perfil
+                                                    ?.nombreCompleto
+                                                    ?.isNotEmpty ??
+                                                false)
+                                            ? userData!
+                                                  .perfil!
+                                                  .nombreCompleto![0]
+                                                  .toUpperCase()
+                                            : userData?.email[0]
+                                                      .toUpperCase() ??
+                                                  'U',
+                                        style: const TextStyle(
+                                          fontSize: 32,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            // Icono de edición para indicar que es clickeable
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: () => _showImageUploadDialog(
+                                  context,
+                                  authProvider,
+                                ),
+                                child: Container(
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF4CAF50),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  child: const Icon(
+                                    Icons.edit,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Overlay de carga si se está subiendo imagen
+                            if (authProvider.isLoading)
+                              Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 15),
+                        Text(
+                          _getUserDisplayName(authProvider),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF2E7D32),
+                              ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          userData?.email ?? '',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // Mostrar errores si los hay
+                if (authProvider.errorMessage != null) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[300]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red[600]),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            authProvider.errorMessage!,
+                            style: TextStyle(color: Colors.red[700]),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => authProvider.clearError(),
+                          icon: Icon(Icons.close, color: Colors.red[600]),
+                          iconSize: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // Opciones del perfil
+                _buildProfileOption(
+                  context,
+                  localizations,
+                  icon: Icons.edit,
+                  title: 'Editar Perfil',
+                  subtitle: 'Actualizar información personal',
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(localizations.comingSoon),
+                        backgroundColor: const Color(0xFF4CAF50),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 15),
+
+                _buildProfileOption(
+                  context,
+                  localizations,
+                  icon: Icons.settings,
+                  title: 'Configuración',
+                  subtitle: 'Preferencias de la aplicación',
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(localizations.comingSoon),
+                        backgroundColor: const Color(0xFF4CAF50),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 40),
+
+                // Botón de logout
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      _showLogoutDialog(context, authProvider, localizations);
+                    },
+                    icon: const Icon(Icons.logout),
+                    label: Text(localizations.logout),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[400],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-
-        const SizedBox(height: 30),
-
-        // Opciones del perfil
-        _buildProfileOption(
-          context,
-          localizations,
-          icon: Icons.edit,
-          title: 'Editar Perfil',
-          subtitle: 'Actualizar información personal',
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(localizations.comingSoon),
-                backgroundColor: const Color(0xFF4CAF50),
-              ),
-            );
-          },
-        ),
-
-        const SizedBox(height: 15),
-
-        _buildProfileOption(
-          context,
-          localizations,
-          icon: Icons.settings,
-          title: 'Configuración',
-          subtitle: 'Preferencias de la aplicación',
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(localizations.comingSoon),
-                backgroundColor: const Color(0xFF4CAF50),
-              ),
-            );
-          },
-        ),
-
-        const Spacer(),
-
-        // Botón de logout
-        Container(
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 20),
-          child: ElevatedButton.icon(
-            onPressed: () {
-              _showLogoutDialog(context, authProvider, localizations);
-            },
-            icon: const Icon(Icons.logout),
-            label: Text(localizations.logout),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[400],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
+  }
+
+  /// Mostrar diálogo para seleccionar y subir imagen de perfil
+  void _showImageUploadDialog(
+    BuildContext context,
+    AuthProvider authProvider,
+  ) async {
+    try {
+      final String? base64Image = await ImageUtils.showImageSourceDialog(
+        context,
+      );
+
+      if (base64Image != null) {
+        final success = await authProvider.uploadProfileImage(base64Image);
+
+        if (success && context.mounted) {
+          // Verificar si hay algún mensaje de advertencia
+          String message = 'Imagen de perfil actualizada exitosamente';
+          Color backgroundColor = const Color(0xFF4CAF50);
+
+          if (authProvider.errorMessage?.isNotEmpty == true) {
+            message =
+                'Imagen subida correctamente. ${authProvider.errorMessage}';
+            backgroundColor = const Color(
+              0xFFFF9800,
+            ); // Naranja para advertencia
+            authProvider
+                .clearError(); // Limpiar el mensaje después de mostrarlo
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: backgroundColor,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(
+                seconds: 4,
+              ), // Más tiempo para leer advertencias
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar imagen: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildProfileOption(

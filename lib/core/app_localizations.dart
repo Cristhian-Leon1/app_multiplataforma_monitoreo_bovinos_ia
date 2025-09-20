@@ -44,6 +44,8 @@ class AppLocalizations {
           'Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.',
       'send': 'Enviar',
       'cancel': 'Cancelar',
+      'recoverSend': 'Correo de recuperación enviado',
+      'recoverError': 'Error al enviar correo de recuperación',
       'processing': 'Procesando...',
       'appDescription': 'Gestiona tu ganado con inteligencia artificial',
       'cattleMonitoring': 'Monitoreo de Bovinos',
@@ -128,6 +130,8 @@ class AppLocalizations {
   String get resetPasswordMessage => get('resetPasswordMessage');
   String get send => get('send');
   String get cancel => get('cancel');
+  String get recoverSend => get('recoverSend');
+  String get recoverError => get('recoverError');
   String get processing => get('processing');
   String get appDescription => get('appDescription');
   String get cattleMonitoring => get('cattleMonitoring');

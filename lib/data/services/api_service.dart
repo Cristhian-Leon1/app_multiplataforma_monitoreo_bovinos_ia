@@ -127,4 +127,48 @@ class ApiService {
       throw Exception('Error de conexión: ${e.toString()}');
     }
   }
+
+  /// Subir imagen de perfil
+  static Future<ProfileImageUploadResponse> uploadProfileImage({
+    required String token,
+    required String imageBase64,
+    required String userId, // UUID del usuario
+    String? fileName,
+  }) async {
+    try {
+      // El backend espera el formato completo: data:image/type;base64,{data}
+      // Si no tiene el formato correcto, agregarlo
+      String formattedBase64 = imageBase64;
+      if (!imageBase64.startsWith('data:')) {
+        formattedBase64 = 'data:image/jpeg;base64,$imageBase64';
+      }
+
+      final uploadRequest = ProfileImageUploadRequest(
+        imageBase64: formattedBase64, // Usar formato completo
+        userId: userId,
+        fileName: fileName,
+      );
+
+      final response = await http.post(
+        Uri.parse('${AppConstants.imagesBaseUrl}/upload-profile'),
+        headers: {..._headers, 'Authorization': 'Bearer $token'},
+        body: jsonEncode(uploadRequest.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        return ProfileImageUploadResponse.fromJson(responseData);
+      } else {
+        final errorData = jsonDecode(response.body);
+        final errorMessage =
+            errorData['detail'] ?? 'Error al subir imagen de perfil';
+        throw Exception('Error HTTP ${response.statusCode}: $errorMessage');
+      }
+    } catch (e) {
+      if (e.toString().contains('Error HTTP')) {
+        rethrow; // Re-lanzar errores HTTP para mantener el mensaje específico
+      }
+      throw Exception('Error de conexión: ${e.toString()}');
+    }
+  }
 }

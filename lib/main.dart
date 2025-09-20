@@ -16,8 +16,6 @@ import 'presentation/views/home_view.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Configurar las barras de sistema como transparentes
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   runApp(const MyApp());
@@ -57,10 +55,7 @@ class MyApp extends StatelessWidget {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [
-          Locale('es', ''), // Español
-          Locale('guc', ''), // Wayuunaiki
-        ],
+        supportedLocales: const [Locale('es', ''), Locale('guc', '')],
         initialRoute: AppRoutes.splash,
         routes: {
           AppRoutes.splash: (context) =>
@@ -75,7 +70,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Wrapper que maneja la navegación basada en el estado de autenticación
 class AppWrapper extends StatelessWidget {
   const AppWrapper({super.key});
 
@@ -88,12 +82,10 @@ class AppWrapper extends StatelessWidget {
           return const SplashView();
         }
 
-        // Si está autenticado, mostrar HomeView
         if (authProvider.isLoggedIn) {
           return const HomeView();
         }
 
-        // Si no está autenticado, mostrar LoginView directamente
         return const SplashView();
       },
     );
@@ -107,7 +99,6 @@ class SystemBarsWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Configurar las barras de sistema según el tema actual
     WidgetsBinding.instance.addPostFrameCallback((_) {
       SystemBarsConfig.setSystemBarsForTheme(context);
     });

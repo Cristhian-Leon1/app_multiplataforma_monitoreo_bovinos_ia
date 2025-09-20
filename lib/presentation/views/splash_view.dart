@@ -26,7 +26,6 @@ class _SplashViewState extends State<SplashView>
     _initializeAnimations();
     _checkAuthAndNavigate();
 
-    // Configurar barras de sistema para el splash (fondo verde)
     SystemBarsConfig.setCustomSystemBars(
       statusBarIconBrightness: Brightness.light,
       navigationBarIconBrightness: Brightness.light,
@@ -54,7 +53,6 @@ class _SplashViewState extends State<SplashView>
     if (mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final isLoggedIn = await authProvider.checkAuthStatus();
-
       if (mounted) {
         if (isLoggedIn) {
           Navigator.of(context).pushReplacementNamed(AppRoutes.home);
@@ -73,6 +71,8 @@ class _SplashViewState extends State<SplashView>
 
   @override
   Widget build(BuildContext context) {
+    final translateText = AppLocalizations.of(context);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -99,7 +99,7 @@ class _SplashViewState extends State<SplashView>
                     scale: _scaleAnimation.value,
                     child: FadeTransition(
                       opacity: _fadeAnimation,
-                      child: const AppLogo(), // Usa el tamaño por defecto (160)
+                      child: const AppLogo(),
                     ),
                   );
                 },
@@ -116,7 +116,7 @@ class _SplashViewState extends State<SplashView>
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Text(
-                  AppLocalizations.of(context).slogan,
+                  translateText.slogan,
                   style: AppTextStyles.splashSubtitle,
                 ),
               ),

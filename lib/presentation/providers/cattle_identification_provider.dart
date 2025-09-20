@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -19,9 +21,9 @@ class CattleIdentificationProvider extends ChangeNotifier {
   bool _isRegistering = false;
   String? _errorMessage;
 
-  // Imágenes capturadas
-  File? _lateralImage;
-  File? _rearImage;
+  // Imágenes capturadas (File en móvil, Uint8List en web)
+  dynamic _lateralImage;
+  dynamic _rearImage;
 
   // Resultados de análisis de pose
   List<PoseAnalysisResult>? _analysisResults;
@@ -63,8 +65,8 @@ class CattleIdentificationProvider extends ChangeNotifier {
   bool get isLoading =>
       _isLoadingLateral || _isLoadingRear || _isAnalyzing || _isRegistering;
   String? get errorMessage => _errorMessage;
-  File? get lateralImage => _lateralImage;
-  File? get rearImage => _rearImage;
+  dynamic get lateralImage => _lateralImage;
+  dynamic get rearImage => _rearImage;
   TextEditingController get bovinoIdController => _bovinoIdController;
 
   // Getters para los dropdowns
@@ -246,12 +248,22 @@ class CattleIdentificationProvider extends ChangeNotifier {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 80,
+        imageQuality: 80, // Misma calidad para ambas plataformas
         preferredCameraDevice: CameraDevice.rear,
       );
 
       if (image != null) {
-        _lateralImage = File(image.path);
+        if (kIsWeb) {
+          // En web, convertir a Uint8List (imagen original)
+          final bytes = await image.readAsBytes();
+          print(
+            'DEBUG WEB - Tamaño imagen lateral capturada (original): ${bytes.length} bytes',
+          );
+          _lateralImage = bytes;
+        } else {
+          // En móvil, usar File (imagen original)
+          _lateralImage = File(image.path);
+        }
         _setLoadingLateral(false);
         notifyListeners();
       } else {
@@ -276,14 +288,24 @@ class CattleIdentificationProvider extends ChangeNotifier {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 80,
+        imageQuality: 80, // Misma calidad para ambas plataformas
       );
 
       // DEBUG: Resultado del picker: ${image?.path}
 
       if (image != null) {
-        _lateralImage = File(image.path);
-        // DEBUG: Imagen lateral guardada: ${_lateralImage?.path}
+        if (kIsWeb) {
+          // En web, convertir a Uint8List (imagen original)
+          final bytes = await image.readAsBytes();
+          print(
+            'DEBUG WEB - Tamaño imagen lateral galería (original): ${bytes.length} bytes',
+          );
+          _lateralImage = bytes;
+        } else {
+          // En móvil, usar File (imagen original)
+          _lateralImage = File(image.path);
+        }
+        // DEBUG: Imagen lateral guardada
         _setLoadingLateral(false);
         notifyListeners();
       } else {
@@ -309,12 +331,22 @@ class CattleIdentificationProvider extends ChangeNotifier {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 80,
+        imageQuality: 80, // Misma calidad para ambas plataformas
         preferredCameraDevice: CameraDevice.rear,
       );
 
       if (image != null) {
-        _rearImage = File(image.path);
+        if (kIsWeb) {
+          // En web, convertir a Uint8List (imagen original)
+          final bytes = await image.readAsBytes();
+          print(
+            'DEBUG WEB - Tamaño imagen trasera capturada (original): ${bytes.length} bytes',
+          );
+          _rearImage = bytes;
+        } else {
+          // En móvil, usar File (imagen original)
+          _rearImage = File(image.path);
+        }
         _setLoadingRear(false);
         notifyListeners();
       } else {
@@ -339,14 +371,24 @@ class CattleIdentificationProvider extends ChangeNotifier {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 80,
+        imageQuality: 80, // Misma calidad para ambas plataformas
       );
 
       // DEBUG: Resultado del picker: ${image?.path}
 
       if (image != null) {
-        _rearImage = File(image.path);
-        // DEBUG: Imagen trasera guardada: ${_rearImage?.path}
+        if (kIsWeb) {
+          // En web, convertir a Uint8List (imagen original)
+          final bytes = await image.readAsBytes();
+          print(
+            'DEBUG WEB - Tamaño imagen trasera galería (original): ${bytes.length} bytes',
+          );
+          _rearImage = bytes;
+        } else {
+          // En móvil, usar File (imagen original)
+          _rearImage = File(image.path);
+        }
+        // DEBUG: Imagen trasera guardada
         _setLoadingRear(false);
         notifyListeners();
       } else {
@@ -464,11 +506,29 @@ class CattleIdentificationProvider extends ChangeNotifier {
 
       // Analizar imagen lateral
       if (_lateralImage != null) {
+        // Debug: Verificar tamaño de imagen antes del análisis
+        if (kIsWeb && _lateralImage is Uint8List) {
+          print(
+            'DEBUG WEB - Tamaño imagen lateral: ${(_lateralImage as Uint8List).length} bytes',
+          );
+        } else if (!kIsWeb && _lateralImage is File) {
+          final file = _lateralImage as File;
+          final size = await file.length();
+          print('DEBUG MOBILE - Tamaño imagen lateral: $size bytes');
+        }
+
         final (lateralPrediction, lateralImageBytes) =
             await PoseService.analyzePose(_lateralImage!);
+
+        // Crear identificador único para la imagen
+        final lateralIdentifier = kIsWeb
+            ? 'lateral_${DateTime.now().millisecondsSinceEpoch}'
+            : (_lateralImage as File).path;
+
         results.add(
           PoseAnalysisResult(
-            imagePath: _lateralImage!.path,
+            imagePath: kIsWeb ? null : (_lateralImage as File).path,
+            imageIdentifier: lateralIdentifier,
             prediction: lateralPrediction,
             imageType: 'lateral',
             resizedImageBytes: lateralImageBytes,
@@ -478,12 +538,30 @@ class CattleIdentificationProvider extends ChangeNotifier {
 
       // Analizar imagen posterior
       if (_rearImage != null) {
+        // Debug: Verificar tamaño de imagen antes del análisis
+        if (kIsWeb && _rearImage is Uint8List) {
+          print(
+            'DEBUG WEB - Tamaño imagen trasera: ${(_rearImage as Uint8List).length} bytes',
+          );
+        } else if (!kIsWeb && _rearImage is File) {
+          final file = _rearImage as File;
+          final size = await file.length();
+          print('DEBUG MOBILE - Tamaño imagen trasera: $size bytes');
+        }
+
         final (rearPrediction, rearImageBytes) = await PoseService.analyzePose(
           _rearImage!,
         );
+
+        // Crear identificador único para la imagen
+        final rearIdentifier = kIsWeb
+            ? 'posterior_${DateTime.now().millisecondsSinceEpoch}'
+            : (_rearImage as File).path;
+
         results.add(
           PoseAnalysisResult(
-            imagePath: _rearImage!.path,
+            imagePath: kIsWeb ? null : (_rearImage as File).path,
+            imageIdentifier: rearIdentifier,
             prediction: rearPrediction,
             imageType: 'posterior',
             resizedImageBytes: rearImageBytes,

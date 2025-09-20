@@ -1,10 +1,12 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Widget reutilizable para mostrar contenedores de imágenes con indicador de carga
 class ImageCaptureContainer extends StatelessWidget {
   final String title;
-  final File? image;
+  final dynamic image; // Puede ser File (móvil) o Uint8List (web)
   final bool isLoading;
 
   const ImageCaptureContainer({
@@ -13,6 +15,25 @@ class ImageCaptureContainer extends StatelessWidget {
     required this.image,
     this.isLoading = false,
   });
+
+  /// Obtiene el ImageProvider correcto según la plataforma
+  ImageProvider? _getImageProvider() {
+    if (image == null) return null;
+
+    if (kIsWeb) {
+      // En web, esperamos Uint8List
+      if (image is Uint8List) {
+        return MemoryImage(image as Uint8List);
+      }
+    } else {
+      // En móvil, esperamos File
+      if (image is File) {
+        return FileImage(image as File);
+      }
+    }
+
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,12 +97,18 @@ class ImageCaptureContainer extends StatelessWidget {
   }
 
   Widget _buildImageState(BuildContext context) {
+    final imageProvider = _getImageProvider();
+
+    if (imageProvider == null) {
+      return _buildEmptyState(context);
+    }
+
     return Container(
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(13),
-        image: DecorationImage(image: FileImage(image!), fit: BoxFit.cover),
+        image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
       ),
       child: Container(
         decoration: BoxDecoration(

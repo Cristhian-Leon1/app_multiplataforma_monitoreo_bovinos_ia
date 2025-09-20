@@ -7,6 +7,7 @@ class AppTheme {
   static const Color secondaryColor = Color(0xFF4CAF50);
   static const Color backgroundColor = Color(0xFFF5F5F5);
   static const Color surfaceColor = Colors.white;
+  static const Color blackColor = Colors.black;
   static const Color errorColor = Color(0xFFD32F2F);
 
   // Colores para tema oscuro

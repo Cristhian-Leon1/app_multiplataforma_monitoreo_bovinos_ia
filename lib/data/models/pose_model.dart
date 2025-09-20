@@ -77,14 +77,16 @@ class PoseAnalysisRequest {
 
 /// Modelo para resultado de análisis con imagen procesada
 class PoseAnalysisResult {
-  final String imagePath;
+  final String? imagePath; // Para móvil con File
+  final String imageIdentifier; // Identificador único para web o móvil
   final PosePredictionResponse prediction;
   final String imageType; // 'lateral' o 'posterior'
   final Uint8List
   resizedImageBytes; // La imagen reducida al 25% para mostrar en UI
 
   const PoseAnalysisResult({
-    required this.imagePath,
+    this.imagePath, // Opcional para web
+    required this.imageIdentifier,
     required this.prediction,
     required this.imageType,
     required this.resizedImageBytes,

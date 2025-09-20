@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../widgets/finca_registration_widget.dart';
 import '../widgets/statistics_charts_widget.dart';
 import '../widgets/breed_filter_charts_widget.dart';
+import '../widgets/unfocus_wrapper.dart';
 
 class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key});
@@ -94,7 +95,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
           children: [
             // Texto descriptivo fijo (siempre visible)
             Padding(
-              padding: const EdgeInsets.only(bottom: 30, left: 7, right: 7),
+              padding: const EdgeInsets.only(bottom: 15, left: 7, right: 7),
               child: Text(
                 'Visualiza información relevante de los bovinos de tu finca para tomar mejores decisiones.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -156,51 +157,53 @@ class _StatisticsPageState extends State<StatisticsPage> {
     BuildContext context,
     StatisticsProvider statisticsProvider,
   ) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 7),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Mostrar errores si los hay
-            if (statisticsProvider.errorMessage != null)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.red[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red[300]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.red[600]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        statisticsProvider.errorMessage!,
-                        style: TextStyle(color: Colors.red[700]),
+    return UnfocusWrapper(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 7),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Mostrar errores si los hay
+              if (statisticsProvider.errorMessage != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[300]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red[600]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          statisticsProvider.errorMessage!,
+                          style: TextStyle(color: Colors.red[700]),
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      onPressed: statisticsProvider.clearError,
-                      icon: Icon(Icons.close, color: Colors.red[600]),
-                      iconSize: 20,
-                    ),
-                  ],
+                      IconButton(
+                        onPressed: statisticsProvider.clearError,
+                        icon: Icon(Icons.close, color: Colors.red[600]),
+                        iconSize: 20,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-            // Formulario de registro de finca centrado
-            FincaRegistrationWidget(
-              controller: statisticsProvider.fincaNameController,
-              validator: statisticsProvider.validateFincaName,
-              onChanged: statisticsProvider.onFincaNameChanged,
-              onRegister: _handleFincaRegistration,
-              isLoading: statisticsProvider.isCreatingFinca,
-            ),
-          ],
+              // Formulario de registro de finca centrado
+              FincaRegistrationWidget(
+                controller: statisticsProvider.fincaNameController,
+                validator: statisticsProvider.validateFincaName,
+                onChanged: statisticsProvider.onFincaNameChanged,
+                onRegister: _handleFincaRegistration,
+                isLoading: statisticsProvider.isCreatingFinca,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -217,7 +220,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            margin: const EdgeInsets.only(left: 7, right: 7, bottom: 24),
+            margin: const EdgeInsets.only(left: 7, right: 7, bottom: 10),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],

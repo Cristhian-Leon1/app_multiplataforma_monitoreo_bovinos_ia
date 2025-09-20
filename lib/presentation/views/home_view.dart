@@ -63,6 +63,70 @@ class _HomeViewState extends State<HomeView> {
     return userData?.email ?? 'Usuario';
   }
 
+  // Método para crear el avatar del usuario (imagen de perfil o icono por defecto)
+  Widget _buildUserAvatar(AuthProvider authProvider) {
+    final userData = authProvider.userData;
+    final imagenPerfil = userData?.perfil?.imagenPerfil;
+
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: imagenPerfil != null && imagenPerfil.isNotEmpty
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(13),
+              child: Image.network(
+                imagenPerfil,
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 28,
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  );
+                },
+              ),
+            )
+          : const Icon(Icons.person, color: Colors.white, size: 28),
+    );
+  }
+
+  // Método para crear el avatar pequeño del bottom navigation
+  Widget _buildBottomNavAvatar(AuthProvider authProvider) {
+    final userData = authProvider.userData;
+    final imagenPerfil = userData?.perfil?.imagenPerfil;
+
+    return imagenPerfil != null && imagenPerfil.isNotEmpty
+        ? ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              imagenPerfil,
+              width: 28,
+              height: 28,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(Icons.person, size: 24);
+              },
+            ),
+          )
+        : const Icon(Icons.person, size: 24);
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -130,14 +194,7 @@ class _HomeViewState extends State<HomeView> {
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: const Icon(Icons.person, color: Colors.white, size: 28),
-          ),
+          _buildUserAvatar(authProvider),
         ],
       ),
     );
@@ -275,7 +332,11 @@ class _HomeViewState extends State<HomeView> {
                       borderRadius: BorderRadius.circular(12),
                     )
                   : null,
-              child: const Icon(Icons.person, size: 24),
+              child: Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  return _buildBottomNavAvatar(authProvider);
+                },
+              ),
             ),
             label: 'Perfil',
           ),

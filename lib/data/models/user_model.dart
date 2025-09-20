@@ -119,3 +119,57 @@ class UserLoginDto {
     return {'email': email, 'password': password};
   }
 }
+
+/// DTO para subir imagen de perfil en base64
+class ProfileImageUploadRequest {
+  final String imageBase64;
+  final String? fileName;
+  final String userId; // UUID del usuario
+
+  ProfileImageUploadRequest({
+    required this.imageBase64,
+    required this.userId,
+    this.fileName,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'image_base64': imageBase64,
+      'file_name': fileName,
+      'user_id': userId,
+    };
+  }
+}
+
+/// Respuesta de subida de imagen de perfil
+class ProfileImageUploadResponse {
+  final String url;
+  final String publicUrl;
+  final String fileName;
+  final bool profileUpdated;
+
+  ProfileImageUploadResponse({
+    required this.url,
+    required this.publicUrl,
+    required this.fileName,
+    required this.profileUpdated,
+  });
+
+  factory ProfileImageUploadResponse.fromJson(Map<String, dynamic> json) {
+    return ProfileImageUploadResponse(
+      url: json['url'] ?? '',
+      publicUrl: json['public_url'] ?? '',
+      fileName: json['file_name'] ?? '',
+      profileUpdated: json['profile_updated'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'url': url,
+      'public_url': publicUrl,
+      'file_name': fileName,
+      'profile_updated': profileUpdated,
+    };
+  }
+}

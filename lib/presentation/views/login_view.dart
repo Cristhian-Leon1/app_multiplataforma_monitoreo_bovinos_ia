@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../widgets/auth_textfield.dart';
 import '../widgets/custom_button.dart';
 import '../widgets/app_logo.dart';
+import '../widgets/unfocus_wrapper.dart';
 import '../../core/app_theme.dart';
 import '../../core/constants.dart';
 import '../../core/app_localizations.dart';
@@ -20,242 +21,235 @@ class _LoginViewState extends State<LoginView> {
   final _loginFormKey = GlobalKey<FormState>();
   final _registerFormKey = GlobalKey<FormState>();
 
-  // Instancias optimizadas
   late AuthProvider _authProvider;
-  late AppLocalizations _localizations;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Instanciar providers y localizations una sola vez
-    _authProvider = Provider.of<AuthProvider>(context);
-    _localizations = AppLocalizations.of(context);
-  }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final translateText = AppLocalizations.of(context);
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1B5E20),
-              Color(0xFF2E7D32),
-              Color(0xFF4CAF50),
-              Color(0xFF81C784),
-            ],
-            stops: [0.0, 0.3, 0.6, 1.0],
+      body: UnfocusWrapper(
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF1B5E20),
+                Color(0xFF2E7D32),
+                Color(0xFF4CAF50),
+                Color(0xFF81C784),
+              ],
+              stops: [0.0, 0.3, 0.6, 1.0],
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                flex: 3,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo
-                    const AppLogo(size: 80),
-                    const SizedBox(height: 10),
-                    // Nombre de la app
-                    Text(
-                      AppConstants.appName,
-                      style: AppTextStyles.splashTitle.copyWith(fontSize: 24),
-                    ),
-                  ],
+          child: SafeArea(
+            child: Column(
+              children: [
+                Expanded(flex: 3, child: _buildTextAndLogo()),
+                Expanded(
+                  flex: 10,
+                  child: _buildPrincipalContent(authProvider, translateText),
                 ),
-              ),
-
-              Expanded(
-                flex: 10,
-                child: Padding(
-                  padding: const EdgeInsets.all(15),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(25),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: const BorderRadius.all(Radius.circular(20)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 20,
-                          offset: const Offset(0, -10),
-                        ),
-                      ],
-                    ),
-                    child: _buildFormContent(),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildFormContent() {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, child) {
-        return Column(
+  Widget _buildTextAndLogo() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const AppLogo(size: 80),
+        const SizedBox(height: 10),
+        Text(
+          AppConstants.appName,
+          style: AppTextStyles.splashTitle.copyWith(fontSize: 24),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrincipalContent(
+    AuthProvider authProvider,
+    AppLocalizations translateText,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(15),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(25),
+        decoration: BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.blackColor.withValues(alpha: 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -10),
+            ),
+          ],
+        ),
+        child: Column(
           children: [
             // Título del formulario (fijo en la parte superior)
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: Text(
                 authProvider.isLoginMode
-                    ? _localizations.loginTitle
-                    : _localizations.registerTitle,
+                    ? translateText.loginTitle
+                    : translateText.registerTitle,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2E7D32),
+                  color: AppTheme.primaryColor,
                   fontSize: 26,
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // Contenido centrado en el espacio restante
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Mostrar error si existe
                       if (authProvider.errorMessage != null) ...[
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(15),
-                          margin: const EdgeInsets.only(bottom: 20),
-                          decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.red[200]!,
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                color: Colors.red[400],
-                                size: 20,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  authProvider.errorMessage!,
-                                  style: TextStyle(
-                                    color: Colors.red[700],
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        _buildExistingErrorMessage(authProvider),
                       ],
-
-                      // Formulario
-                      _buildForm(authProvider),
-
+                      _buildLoginRegisterForm(authProvider, translateText),
                       const SizedBox(height: 20),
-
-                      // Botón principal
-                      if (authProvider.isLoading)
-                        Column(
-                          children: [
-                            const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppTheme.primaryColor,
-                              ),
-                            ),
-                            const SizedBox(height: 15),
-                            Text(
-                              _localizations.processing,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: Colors.grey[600]),
-                            ),
-                          ],
-                        )
-                      else
-                        CustomButton(
-                          text: authProvider.isLoginMode
-                              ? _localizations.login
-                              : _localizations.register,
-                          onPressed: () => _handleAuth(authProvider),
-                          backgroundColor: const Color(0xFF2E7D32),
-                        ),
-
+                      _buildButtonLoginRegister(authProvider, translateText),
                       const SizedBox(height: 15),
-
-                      // Toggle entre login y registro
-                      TextButton(
-                        onPressed: () {
-                          _authProvider.toggleAuthMode();
-                        },
-                        child: RichText(
-                          text: TextSpan(
-                            text: authProvider.isLoginMode
-                                ? _localizations.dontHaveAccount
-                                : _localizations.alreadyHaveAccount,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.grey[600]),
-                            children: [
-                              TextSpan(
-                                text: authProvider.isLoginMode
-                                    ? _localizations.createOne
-                                    : _localizations.signIn,
-                                style: const TextStyle(
-                                  color: AppTheme.primaryColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      _buildToggleAuthMode(authProvider, translateText),
                     ],
                   ),
                 ),
               ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildForm(AuthProvider authProvider) {
+  Widget _buildExistingErrorMessage(AuthProvider authProvider) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.red[200]!, width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red[400], size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              authProvider.errorMessage!,
+              style: TextStyle(color: Colors.red[700], fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginRegisterForm(
+    AuthProvider authProvider,
+    AppLocalizations translateText,
+  ) {
     return Form(
       key: authProvider.isLoginMode ? _loginFormKey : _registerFormKey,
       child: authProvider.isLoginMode
-          ? _buildLoginForm(authProvider)
-          : _buildRegisterForm(authProvider),
+          ? _buildLoginForm(authProvider, translateText)
+          : _buildRegisterForm(authProvider, translateText),
     );
   }
 
-  Widget _buildLoginForm(AuthProvider authProvider) {
+  Widget _buildButtonLoginRegister(
+    AuthProvider authProvider,
+    AppLocalizations translateText,
+  ) {
+    if (authProvider.isLoading) {
+      return Column(
+        children: [
+          CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+          ),
+          const SizedBox(height: 15),
+          Text(
+            translateText.processing,
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+        ],
+      );
+    } else {
+      return CustomButton(
+        text: authProvider.isLoginMode
+            ? translateText.login
+            : translateText.register,
+        onPressed: () => _handleAuth(authProvider),
+        backgroundColor: AppTheme.primaryColor,
+      );
+    }
+  }
+
+  Widget _buildToggleAuthMode(
+    AuthProvider authProvider,
+    AppLocalizations translateText,
+  ) {
+    return TextButton(
+      onPressed: () {
+        authProvider.toggleAuthMode();
+      },
+      child: RichText(
+        text: TextSpan(
+          text: authProvider.isLoginMode
+              ? translateText.dontHaveAccount
+              : translateText.alreadyHaveAccount,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+          children: [
+            TextSpan(
+              text: authProvider.isLoginMode
+                  ? translateText.createOne
+                  : translateText.signIn,
+              style: const TextStyle(
+                color: AppTheme.primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginForm(
+    AuthProvider authProvider,
+    AppLocalizations translateText,
+  ) {
     return Column(
       children: [
         AuthTextField(
           controller: authProvider.loginEmailController,
-          hintText: _localizations.email,
+          hintText: translateText.email,
           prefixIcon: Icons.email_outlined,
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 15),
         AuthTextField(
           controller: authProvider.loginPasswordController,
-          hintText: _localizations.password,
+          hintText: translateText.password,
           prefixIcon: Icons.lock_outlined,
           keyboardType: TextInputType.emailAddress,
           isPassword: true,
@@ -263,9 +257,9 @@ class _LoginViewState extends State<LoginView> {
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            onPressed: () => _showResetPasswordDialog(),
+            onPressed: () => _showResetPasswordDialog(translateText),
             child: Text(
-              _localizations.forgotPassword,
+              translateText.forgotPassword,
               style: TextStyle(
                 color: Colors.grey[600],
                 decoration: TextDecoration.underline,
@@ -277,25 +271,28 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  Widget _buildRegisterForm(AuthProvider authProvider) {
+  Widget _buildRegisterForm(
+    AuthProvider authProvider,
+    AppLocalizations translateText,
+  ) {
     return Column(
       children: [
         AuthTextField(
           controller: authProvider.registerNameController,
-          hintText: _localizations.fullName,
+          hintText: translateText.fullName,
           prefixIcon: Icons.person_outlined,
         ),
         const SizedBox(height: 15),
         AuthTextField(
           controller: authProvider.registerEmailController,
-          hintText: _localizations.email,
+          hintText: translateText.email,
           prefixIcon: Icons.email_outlined,
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 15),
         AuthTextField(
           controller: authProvider.registerPasswordController,
-          hintText: _localizations.password,
+          hintText: translateText.password,
           prefixIcon: Icons.lock_outlined,
           keyboardType: TextInputType.emailAddress,
           isPassword: true,
@@ -303,7 +300,7 @@ class _LoginViewState extends State<LoginView> {
         const SizedBox(height: 15),
         AuthTextField(
           controller: authProvider.registerConfirmPasswordController,
-          hintText: _localizations.confirmPassword,
+          hintText: translateText.confirmPassword,
           prefixIcon: Icons.lock_outline,
           keyboardType: TextInputType.emailAddress,
           isPassword: true,
@@ -313,45 +310,38 @@ class _LoginViewState extends State<LoginView> {
   }
 
   Future<void> _handleAuth(AuthProvider authProvider) async {
-    // Cerrar el teclado antes de procesar
     FocusScope.of(context).unfocus();
-
     if (authProvider.isLoginMode) {
       final success = await authProvider.login();
-
       if (success) {
-        // Si el login fue exitoso, navegar a HomeView
         if (mounted) {
           Navigator.of(context).pushReplacementNamed(AppRoutes.home);
         }
       }
     } else {
-      // Intentar registrar usuario
       final success = await authProvider.register();
-
       if (success) {
-        // Si el registro fue exitoso, cambiar al modo login y mostrar diálogo
         _showRegistrationSuccessDialog(authProvider);
       }
     }
   }
 
-  void _showResetPasswordDialog() {
+  void _showResetPasswordDialog(AppLocalizations translateText) {
     final emailController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(_localizations.resetPassword),
+          title: Text(translateText.resetPassword),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_localizations.resetPasswordMessage),
+              Text(translateText.resetPasswordMessage),
               const SizedBox(height: 20),
               AuthTextField(
                 controller: emailController,
-                hintText: _localizations.email,
+                hintText: translateText.email,
                 prefixIcon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
               ),
@@ -364,7 +354,7 @@ class _LoginViewState extends State<LoginView> {
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text(
-                _localizations.cancel,
+                translateText.cancel,
                 style: TextStyle(color: Colors.grey[600]),
               ),
             ),
@@ -376,18 +366,18 @@ class _LoginViewState extends State<LoginView> {
                   final scaffoldMessenger = ScaffoldMessenger.of(context);
 
                   navigator.pop();
-
                   final success = await _authProvider.resetPassword(email);
-
                   if (mounted) {
                     scaffoldMessenger.showSnackBar(
                       SnackBar(
                         content: Text(
                           success
-                              ? 'Correo de recuperación enviado'
-                              : 'Error al enviar correo de recuperación',
+                              ? translateText.recoverSend
+                              : translateText.recoverError,
                         ),
-                        backgroundColor: success ? Colors.green : Colors.red,
+                        backgroundColor: success
+                            ? AppTheme.primaryColor
+                            : AppTheme.errorColor,
                       ),
                     );
                   }
@@ -395,12 +385,12 @@ class _LoginViewState extends State<LoginView> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
+                foregroundColor: AppTheme.surfaceColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(_localizations.send),
+              child: Text(translateText.send),
             ),
           ],
         );
@@ -411,7 +401,7 @@ class _LoginViewState extends State<LoginView> {
   void _showRegistrationSuccessDialog(AuthProvider authProvider) {
     showDialog(
       context: context,
-      barrierDismissible: false, // No se puede cerrar tocando fuera
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Row(

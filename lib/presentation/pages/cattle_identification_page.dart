@@ -5,6 +5,7 @@ import '../providers/statistics_provider.dart';
 import '../widgets/image_capture_container.dart';
 import '../widgets/custom_textfield.dart';
 import '../widgets/pose_results_widget.dart';
+import '../widgets/unfocus_wrapper.dart';
 import '../views/home_view.dart';
 
 class CattleIdentificationPage extends StatelessWidget {
@@ -18,7 +19,7 @@ class CattleIdentificationPage extends StatelessWidget {
           children: [
             // Texto descriptivo fijo (siempre visible)
             Padding(
-              padding: const EdgeInsets.only(bottom: 30, left: 5, right: 5),
+              padding: const EdgeInsets.only(bottom: 10, left: 5, right: 5),
               child: Text(
                 'Caracteriza los bovinos de tu finca registrando sus características con el apoyo de visión artificial.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -77,11 +78,7 @@ class CattleIdentificationPage extends StatelessWidget {
     BuildContext context,
     CattleIdentificationProvider cattleProvider,
   ) {
-    return GestureDetector(
-      onTap: () {
-        // Remover el foco del TextField cuando se toca en cualquier parte de la pantalla
-        FocusScope.of(context).unfocus();
-      },
+    return UnfocusWrapper(
       child: SingleChildScrollView(
         // Agregar scroll para evitar overflow
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -272,7 +269,7 @@ class CattleIdentificationPage extends StatelessWidget {
                       ? const Color(0xFF4CAF50)
                       : Colors.grey[400],
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -294,7 +291,7 @@ class CattleIdentificationPage extends StatelessWidget {
                 label: const Text('Limpiar Todo'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF4CAF50),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
