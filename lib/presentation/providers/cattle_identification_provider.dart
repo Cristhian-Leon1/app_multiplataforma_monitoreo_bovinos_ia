@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -42,6 +43,10 @@ class CattleIdentificationProvider extends ChangeNotifier {
   int? _edadEstimada;
   double? _pesoEstimado;
 
+  // Variables para cálculo de peso
+  double _variableA = 0;
+  double _variableB = 0;
+
   // Opciones para los dropdowns
   final List<String> _sexOptions = ['Macho', 'Hembra'];
   final List<String> _breedOptions = [
@@ -83,6 +88,10 @@ class CattleIdentificationProvider extends ChangeNotifier {
   double? get longitudTorso => _longitudTorso;
   int? get edadEstimada => _edadEstimada;
   double? get pesoEstimado => _pesoEstimado;
+
+  // Getters para variables de cálculo de peso
+  double get variableA => _variableA;
+  double get variableB => _variableB;
 
   // Getter para resultados de análisis
   List<PoseAnalysisResult>? get analysisResults => _analysisResults;
@@ -428,6 +437,8 @@ class CattleIdentificationProvider extends ChangeNotifier {
     _longitudTorso = null;
     _edadEstimada = null;
     _pesoEstimado = null;
+    _variableA = 0;
+    _variableB = 0;
     _errorMessage = null;
     notifyListeners();
   }
@@ -452,6 +463,8 @@ class CattleIdentificationProvider extends ChangeNotifier {
     _longitudTorso = null;
     _edadEstimada = null;
     _pesoEstimado = null;
+    _variableA = 0;
+    _variableB = 0;
     notifyListeners();
   }
 
@@ -490,6 +503,42 @@ class CattleIdentificationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Actualizar variables para cálculo de peso
+  void updateWeightVariables({double? variableA, double? variableB}) {
+    if (variableA != null) {
+      _variableA = variableA;
+      print("Variable A actualizada en provider: $_variableA");
+    }
+    if (variableB != null) {
+      _variableB = variableB;
+      print("Variable B actualizada en provider: $_variableB");
+    }
+
+    // Intentar calcular peso si tenemos ambas variables
+    _tryCalculateWeight();
+  }
+
+  /// Intentar calcular el peso si tenemos ambas variables
+  void _tryCalculateWeight() {
+    if (_variableA > 0 && _variableB > 0) {
+      print("Calculando peso final con A: $_variableA, B: $_variableB");
+      final perimetroTorsoCentimetros =
+          pi *
+          (3 * (_variableA + _variableB) -
+              sqrt(
+                (3 * _variableA + _variableB) * (_variableA + 3 * _variableB),
+              ));
+      final pesoEstimadoKg =
+          pow((perimetroTorsoCentimetros - 22), 2).toDouble() / 75;
+
+      _pesoEstimado = pesoEstimadoKg;
+      print("Peso estimado calculado: $pesoEstimadoKg kg");
+      notifyListeners();
+    } else {
+      print("Esperando más datos - A: $_variableA, B: $_variableB");
+    }
+  }
+
   /// Analizar bovino con IA
   Future<void> analyzeCattle() async {
     clearError();
@@ -498,6 +547,11 @@ class CattleIdentificationProvider extends ChangeNotifier {
       _setError('Por favor, completa todos los campos requeridos.');
       return;
     }
+
+    // Resetear variables para nuevo análisis
+    _variableA = 0;
+    _variableB = 0;
+    print("Variables A y B reseteadas para nuevo análisis");
 
     _setAnalyzing(true);
 

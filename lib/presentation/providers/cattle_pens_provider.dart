@@ -113,7 +113,7 @@ class CattlePensProvider extends ChangeNotifier {
   // Estado de visibilidad de las puertas
   bool _showRedGates = true; // Puertas rojas (A1, B1, C1, D1, E1, F1, G1)
   bool _showGreenGates =
-      false; // Puertas verdes (A2, B2, C2, D2, E2, F2, G2) - ocultas por defecto
+      false; // Puertas verdes (A2, B2, C2, D2, E2, F2, G2) - ocultas inicialmente
 
   // Variables para almacenamiento de cantidades de bovinos por corral
   Map<String, int> _storedCorralCounts = {};
@@ -431,6 +431,13 @@ class CattlePensProvider extends ChangeNotifier {
     return inside;
   }
 
+  /// Obtener las cantidades correctas para dibujar bovinos
+  /// Ahora simplemente usa _currentCorralCounts que ya tiene la lógica de retraso aplicada
+  Map<String, int> _getCountsForDrawing(Map<String, int> currentCounts) {
+    // Simplemente usar _currentCorralCounts que ya maneja el retraso de animaciones
+    return Map.from(_currentCorralCounts);
+  }
+
   /// Generar puntos para todos los corrales basado en las cantidades de bovinos
   Map<int, List<Offset>> generateCattlePoints(
     Map<String, int> rangosEdad,
@@ -439,15 +446,19 @@ class CattlePensProvider extends ChangeNotifier {
     final scaleFactor = currentSize / _originalImageSize;
     final cattlePoints = <int, List<Offset>>{};
 
+    // Durante las animaciones, usar cantidades almacenadas (sin incluir el nuevo bovino)
+    // Después de las animaciones, usar las cantidades actuales (incluyendo el nuevo bovino)
+    final countsToUse = _getCountsForDrawing(rangosEdad);
+
     // Mapear rangos de edad a corrales
     final counts = [
-      rangosEdad['0-6 meses'] ?? 0, // Corral 1
-      rangosEdad['7-12 meses'] ?? 0, // Corral 2
-      rangosEdad['13-24 meses'] ?? 0, // Corral 3
-      rangosEdad['25-36 meses'] ?? 0, // Corral 4
-      rangosEdad['37-48 meses'] ?? 0, // Corral 5
-      rangosEdad['49-60 meses'] ?? 0, // Corral 6
-      rangosEdad['Mayores a 60 meses'] ?? 0, // Corral 7
+      countsToUse['0-6 meses'] ?? 0, // Corral 1
+      countsToUse['7-12 meses'] ?? 0, // Corral 2
+      countsToUse['13-24 meses'] ?? 0, // Corral 3
+      countsToUse['25-36 meses'] ?? 0, // Corral 4
+      countsToUse['37-48 meses'] ?? 0, // Corral 5
+      countsToUse['49-60 meses'] ?? 0, // Corral 6
+      countsToUse['Mayores a 60 meses'] ?? 0, // Corral 7
     ];
 
     final corralPoints = [
@@ -603,19 +614,22 @@ class CattlePensProvider extends ChangeNotifier {
 
     // Filtrar las puertas según su visibilidad y animaciones
     return gates.where((gate) {
-      // Durante animaciones, mostrar ambas puertas del par afectado
+      // Durante animaciones, lógica especial de visibilidad
       if (isGateAnimating(gate.id)) {
-        return true; // Mostrar ambas puertas durante animación
+        return true; // Mostrar ambas puertas durante animación (principal + secundaria)
       }
 
-      // Lógica normal de visibilidad basada en el ID de la puerta
-      if (gate.id.endsWith('1') && !_showRedGates) {
-        return false; // Ocultar puertas tipo 1 si están deshabilitadas
+      // Estado normal: Solo mostrar puertas principales (A1, B1, C1, D1, E1, F1, G1)
+      if (gate.id.endsWith('1')) {
+        return _showRedGates; // Mostrar puertas principales si están habilitadas
       }
-      if (gate.id.endsWith('2') && !_showGreenGates) {
-        return false; // Ocultar puertas tipo 2 si están deshabilitadas
+
+      // Puertas secundarias (A2, B2, C2, D2, E2, F2, G2) solo en animaciones
+      if (gate.id.endsWith('2')) {
+        return false; // Ocultar puertas secundarias en estado normal
       }
-      return true; // Mostrar la puerta
+
+      return false; // Por seguridad, ocultar cualquier otra puerta
     }).toList();
   }
 
@@ -755,26 +769,64 @@ class CattlePensProvider extends ChangeNotifier {
 
   /// Actualizar cantidades desde StatisticsProvider y detectar cambios
   Future<void> updateCorralCounts(Map<String, int> newCounts) async {
-    _currentCorralCounts = Map.from(newCounts);
+    // Detectar aumentos ANTES de actualizar _currentCorralCounts
+    final pendingAnimations = <String>[];
 
-    // Detectar aumentos en cada corral
     for (String rangoEdad in newCounts.keys) {
       final currentCount = newCounts[rangoEdad] ?? 0;
       final storedCount = _storedCorralCounts[rangoEdad] ?? 0;
 
-      // Si hay un aumento, activar animación de puertas
+      // Si hay un aumento, marcar para animación
       if (currentCount > storedCount) {
-        await _activateGateAnimation(rangoEdad);
+        pendingAnimations.add(rangoEdad);
       }
     }
 
-    // Guardar las nuevas cantidades
-    await saveCorralCounts();
+    // Solo actualizar _currentCorralCounts para corrales SIN animaciones
+    _currentCorralCounts = Map.from(newCounts);
+    for (String rangoEdad in pendingAnimations) {
+      // Mantener la cantidad anterior durante la animación
+      _currentCorralCounts[rangoEdad] = _storedCorralCounts[rangoEdad] ?? 0;
+    }
+
+    // Activar animaciones para corrales con aumentos
+    for (String rangoEdad in pendingAnimations) {
+      await _activateGateAnimation(rangoEdad, newCounts[rangoEdad] ?? 0);
+    }
+
+    // Guardar cantidades solo para corrales sin animaciones
+    await _saveCountsExcludingAnimating(newCounts);
     notifyListeners();
   }
 
+  /// Guardar cantidades excluyendo corrales en animación
+  Future<void> _saveCountsExcludingAnimating(Map<String, int> newCounts) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      for (String key in newCounts.keys) {
+        final gatePrefix = _rangoToGate[key];
+        if (gatePrefix != null) {
+          final gateKey = '${gatePrefix}1_${gatePrefix}2';
+          final isAnimating = _animatingGates[gateKey] ?? false;
+
+          if (!isAnimating) {
+            // Solo guardar si no está animándose
+            await prefs.setInt('corral_$key', newCounts[key] ?? 0);
+            _storedCorralCounts[key] = newCounts[key] ?? 0;
+          }
+        } else {
+          // Para rangos sin mapeo, guardar normalmente
+          await prefs.setInt('corral_$key', newCounts[key] ?? 0);
+          _storedCorralCounts[key] = newCounts[key] ?? 0;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error saving corral counts excluding animating: $e');
+    }
+  }
+
   /// Activar animación de puertas para un rango de edad específico
-  Future<void> _activateGateAnimation(String rangoEdad) async {
+  Future<void> _activateGateAnimation(String rangoEdad, int newCount) async {
     final gatePrefix = _rangoToGate[rangoEdad];
     if (gatePrefix == null) return;
 
@@ -785,13 +837,29 @@ class CattlePensProvider extends ChangeNotifier {
 
     // Marcar puertas como animándose
     _animatingGates[gateKey] = true;
-    notifyListeners();
+    notifyListeners(); // Esto redibujará sin el nuevo bovino
 
     // Configurar timer para restaurar estado después de 10 segundos
-    _gateAnimationTimers[gateKey] = Timer(const Duration(seconds: 10), () {
-      _animatingGates[gateKey] = false;
-      notifyListeners();
-    });
+    _gateAnimationTimers[gateKey] = Timer(
+      const Duration(seconds: 10),
+      () async {
+        _animatingGates[gateKey] = false;
+
+        // AQUÍ es donde aplicamos la nueva cantidad después de la animación
+        _currentCorralCounts[rangoEdad] = newCount;
+
+        // Guardar la nueva cantidad en SharedPreferences
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setInt('corral_$rangoEdad', newCount);
+          _storedCorralCounts[rangoEdad] = newCount;
+        } catch (e) {
+          debugPrint('Error saving count after animation: $e');
+        }
+
+        notifyListeners(); // Esto redibujará CON el nuevo bovino
+      },
+    );
   }
 
   /// Verificar si una puerta específica está en animación
@@ -820,18 +888,23 @@ class CattlePensProvider extends ChangeNotifier {
   /// Obtener color de puerta considerando animaciones
   Color getGateColor(String gateName) {
     if (isGateAnimating(gateName)) {
-      // Durante animación: A1,B1,C1,D1,E1,F1,G1 -> verde, A2,B2,C2,D2,E2,F2,G2 -> rojo
+      // Durante animación de 10 segundos cuando hay aumento de bovinos:
+      // - Puertas principales (A1,B1,C1,D1,E1,F1,G1) -> VERDE (activadas)
+      // - Puertas secundarias (A2,B2,C2,D2,E2,F2,G2) -> ROJO (se muestran como activas)
       if (gateName.endsWith('1')) {
-        return Colors.green; // Puerta tipo 1 se vuelve verde
+        return Colors.green; // Puerta principal se activa en verde
       } else {
-        return Colors.red; // Puerta tipo 2 se vuelve roja
+        return Colors.red; // Puerta secundaria se activa en rojo
       }
     } else {
-      // Estado normal: A1,B1,C1,D1,E1,F1,G1 -> rojo, A2,B2,C2,D2,E2,F2,G2 -> verde
+      // Estado normal inicial:
+      // - Solo se muestran puertas principales (A1,B1,C1,D1,E1,F1,G1) en ROJO
+      // - Las puertas secundarias (A2,B2,C2,D2,E2,F2,G2) están ocultas
       if (gateName.endsWith('1')) {
-        return Colors.red; // Puerta tipo 1 es roja por defecto
+        return Colors.red; // Puerta principal en reposo es roja
       } else {
-        return Colors.green; // Puerta tipo 2 es verde por defecto
+        return Colors
+            .green; // Color por defecto para puertas secundarias (aunque están ocultas)
       }
     }
   }
@@ -858,15 +931,19 @@ class CattlePensProvider extends ChangeNotifier {
   ) {
     final cattlePoints = <int, List<Offset>>{};
 
+    // Durante las animaciones, usar cantidades almacenadas (sin incluir el nuevo bovino)
+    // Después de las animaciones, usar las cantidades actuales (incluyendo el nuevo bovino)
+    final countsToUse = _getCountsForDrawing(rangosEdad);
+
     // Mapear rangos de edad a corrales
     final counts = [
-      rangosEdad['0-6 meses'] ?? 0, // Corral 1
-      rangosEdad['7-12 meses'] ?? 0, // Corral 2
-      rangosEdad['13-24 meses'] ?? 0, // Corral 3
-      rangosEdad['25-36 meses'] ?? 0, // Corral 4
-      rangosEdad['37-48 meses'] ?? 0, // Corral 5
-      rangosEdad['49-60 meses'] ?? 0, // Corral 6
-      rangosEdad['Mayores a 60 meses'] ?? 0, // Corral 7
+      countsToUse['0-6 meses'] ?? 0, // Corral 1
+      countsToUse['7-12 meses'] ?? 0, // Corral 2
+      countsToUse['13-24 meses'] ?? 0, // Corral 3
+      countsToUse['25-36 meses'] ?? 0, // Corral 4
+      countsToUse['37-48 meses'] ?? 0, // Corral 5
+      countsToUse['49-60 meses'] ?? 0, // Corral 6
+      countsToUse['Mayores a 60 meses'] ?? 0, // Corral 7
     ];
 
     final corralPoints = [
@@ -904,7 +981,7 @@ class CattlePensProvider extends ChangeNotifier {
     final punto40 = _corral6Points[4]; // Punto 40 del Corral 6
     final punto47 = _corral7Points[4]; // Punto 47 del Corral 7
 
-    return [
+    final gates = [
       // Puertas del Corral 1 (A) - coordenadas originales
       GateConnection(
         start: punto5,
@@ -1003,6 +1080,26 @@ class CattlePensProvider extends ChangeNotifier {
         color: getGateColor('G2'),
       ),
     ];
+
+    // Aplicar el mismo filtrado que en getScaledGates()
+    return gates.where((gate) {
+      // Durante animaciones, lógica especial de visibilidad
+      if (isGateAnimating(gate.id)) {
+        return true; // Mostrar ambas puertas durante animación (principal + secundaria)
+      }
+
+      // Estado normal: Solo mostrar puertas principales (A1, B1, C1, D1, E1, F1, G1)
+      if (gate.id.endsWith('1')) {
+        return _showRedGates; // Mostrar puertas principales si están habilitadas
+      }
+
+      // Puertas secundarias (A2, B2, C2, D2, E2, F2, G2) solo en animaciones
+      if (gate.id.endsWith('2')) {
+        return false; // Ocultar puertas secundarias en estado normal
+      }
+
+      return false; // Por seguridad, ocultar cualquier otra puerta
+    }).toList();
   }
 }
 

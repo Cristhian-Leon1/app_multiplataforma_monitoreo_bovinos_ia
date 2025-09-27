@@ -100,22 +100,27 @@ class _PoseResultImageWidgetState extends State<PoseResultImageWidget> {
             keypoints[5],
             keypoints[6],
           ); // E-F
-          // Generar un entero entre 0 y 80
+
+          final alturaCentimetos = altura / 3.35;
+          final longitudOblicuaCentimetros = longitudOblicua / 3.35;
+          final longitudCaderaCentimetros = longitudCadera / 3.35;
+          final longitudTorsoCentimetros = longitudTorso / 3.35;
+
+          // Actualizar variable B para cálculo de peso
+          final variableB = longitudTorsoCentimetros / 2;
+          provider.updateWeightVariables(variableB: variableB);
+
           final edadAleatoria = random.nextInt(
             81,
           ); // incluye 0, excluye 81 → [0,80]
 
-          // Generar un double entre 50 y 600
-          final pesoAleatorio =
-              50 + random.nextDouble() * (600 - 50); // [50,600)
           // Actualizar el provider
           provider.updateMorphometricMeasures(
-            altura: altura / 3.35,
-            longitudOblicua: longitudOblicua / 3.35,
-            longitudCadera: longitudCadera / 3.35,
-            longitudTorso: longitudTorso / 3.35,
+            altura: alturaCentimetos,
+            longitudOblicua: longitudOblicuaCentimetros,
+            longitudCadera: longitudCaderaCentimetros,
+            longitudTorso: longitudTorsoCentimetros,
             edadEstimada: edadAleatoria,
-            pesoEstimado: pesoAleatorio,
           );
         } else if (keypoints.length >= 2) {
           // Caso limitado: solo tenemos C y D
@@ -124,7 +129,14 @@ class _PoseResultImageWidgetState extends State<PoseResultImageWidget> {
             keypoints[1],
           ); // C-D
 
-          provider.updateMorphometricMeasures(anchoCadera: anchoCadera / 5.8);
+          final anchoCaderaCentimetros = anchoCadera / 5.8;
+          // Actualizar variable A para cálculo de peso
+          final variableA = anchoCaderaCentimetros / 2;
+          provider.updateWeightVariables(variableA: variableA);
+
+          provider.updateMorphometricMeasures(
+            anchoCadera: anchoCaderaCentimetros,
+          );
         }
       } else if (detection.className == 'bovino_posterior') {
         // Mapeo de índices para bovino posterior:
@@ -136,7 +148,14 @@ class _PoseResultImageWidgetState extends State<PoseResultImageWidget> {
             keypoints[1],
           ); // H-I
 
-          provider.updateMorphometricMeasures(anchoCadera: anchoCadera / 5.8);
+          final anchoCaderaCentimetros = anchoCadera / 5.8;
+          // Actualizar variable A para cálculo de peso
+          final variableA = anchoCaderaCentimetros / 2;
+          provider.updateWeightVariables(variableA: variableA);
+
+          provider.updateMorphometricMeasures(
+            anchoCadera: anchoCaderaCentimetros,
+          );
         }
       }
     }
@@ -407,8 +426,8 @@ class PoseResultsDialog extends StatelessWidget {
     "Longitud cadera (A -> G)",
     "Ancho cadera (H -> I)",
     "Longitud torso (E -> F)",
+    "Peso calculado",
     "Edad estimada",
-    "Peso estimado",
   ];
 
   @override
@@ -424,8 +443,8 @@ class PoseResultsDialog extends StatelessWidget {
       analisisProvider.longitudCadera?.toStringAsFixed(2) ?? 'N/A',
       analisisProvider.anchoCadera?.toStringAsFixed(2) ?? 'N/A',
       analisisProvider.longitudTorso?.toStringAsFixed(2) ?? 'N/A',
-      analisisProvider.edadEstimada?.toString() ?? 'N/A',
       analisisProvider.pesoEstimado?.toStringAsFixed(2) ?? 'N/A',
+      analisisProvider.edadEstimada?.toString() ?? 'N/A',
     ];
 
     return Dialog(
@@ -478,8 +497,8 @@ class PoseResultsDialog extends StatelessWidget {
                                     : i >= 3 && i <= 7
                                     ? "${identificationResults[i]} ${i == 6 ? 'cms' : 'cms'}"
                                     : i == 8
-                                    ? "${identificationResults[i]} meses"
-                                    : "${identificationResults[i]} kg")
+                                    ? "${identificationResults[i]} kg"
+                                    : "${identificationResults[i]} meses")
                               : "N/A",
                         ),
                       ),
@@ -674,27 +693,49 @@ class PoseResultsDialog extends StatelessWidget {
           message += ' y se registraron $medicionesCount mediciones';
         }
 
-        // Éxito - Mostrar mensaje y cerrar diálogo
+        // OPTIMIZACIÓN: Respuesta inmediata al usuario
+        // 1. Mostrar feedback inmediato
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(message),
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '✓ $message',
+                      style: const TextStyle(fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                    ),
+                  ),
+                ],
+              ),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
 
-        // Actualizar las estadísticas
-        await statisticsProvider.initializeData(authProvider.userToken!);
-
-        // Cerrar el diálogo
+        // 2. Cerrar diálogo inmediatamente
         if (context.mounted) {
           Navigator.of(context).pop();
         }
 
-        // Limpiar el formulario para el siguiente bovino
+        // 3. Limpiar formulario inmediatamente para próximo uso
         cattleProvider.clearForm();
+
+        // 4. Actualizar estadísticas en background sin bloquear UI
+        statisticsProvider
+            .initializeData(authProvider.userToken!)
+            .then((_) {
+              print('✓ Estadísticas actualizadas correctamente');
+            })
+            .catchError((error) {
+              print('❌ Error al actualizar estadísticas: $error');
+            });
       } else {
         // Error - El mensaje ya fue manejado en el provider
         // Solo mostrar el error si hay uno
