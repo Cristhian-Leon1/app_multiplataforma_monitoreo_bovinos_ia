@@ -8,12 +8,14 @@ import '../models/pose_model.dart';
 
 /// Servicio para el análisis de pose de bovinos
 class PoseService {
-  static const String _baseUrl = 'https://e41cb3ea4cfb.ngrok-free.app';
+  static const String _baseUrl = 'https://95f759b4f416.ngrok-free.app';
   static const String _predictEndpoint = '/predict/';
 
   static const Map<String, String> _headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'ngrok-skip-browser-warning':
+        'true', // ✅ Evitar página de advertencia de ngrok
   };
 
   /// Procesar imagen para envío a API (redimensiona al 25% - MISMO proceso para móvil y web)

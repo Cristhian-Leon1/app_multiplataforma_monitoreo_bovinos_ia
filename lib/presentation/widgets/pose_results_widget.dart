@@ -77,7 +77,6 @@ class _PoseResultImageWidgetState extends State<PoseResultImageWidget> {
   void _calculateMorphometricMeasures(CattleIdentificationProvider provider) {
     for (final detection in widget.result.prediction.detections) {
       final keypoints = detection.keypoints;
-      final random = Random();
 
       if (detection.className == 'bovino_lateral') {
         // Mapeo de índices para bovino lateral:
@@ -109,18 +108,12 @@ class _PoseResultImageWidgetState extends State<PoseResultImageWidget> {
           // Actualizar variable B para cálculo de peso
           final variableB = longitudTorsoCentimetros / 2;
           provider.updateWeightVariables(variableB: variableB);
-
-          final edadAleatoria = random.nextInt(
-            81,
-          ); // incluye 0, excluye 81 → [0,80]
-
           // Actualizar el provider
           provider.updateMorphometricMeasures(
             altura: alturaCentimetos,
             longitudOblicua: longitudOblicuaCentimetros,
             longitudCadera: longitudCaderaCentimetros,
             longitudTorso: longitudTorsoCentimetros,
-            edadEstimada: edadAleatoria,
           );
         } else if (keypoints.length >= 2) {
           // Caso limitado: solo tenemos C y D

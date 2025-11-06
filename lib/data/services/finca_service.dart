@@ -13,6 +13,8 @@ class FincaService {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'Authorization': 'Bearer $token',
+      'ngrok-skip-browser-warning':
+          'true', // ✅ Evitar página de advertencia de ngrok
     };
   }
 

@@ -32,6 +32,7 @@ class ApiTestService {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
               'Authorization': 'Bearer $token',
+              'ngrok-skip-browser-warning': 'true', // ✅ Por si usas ngrok
             },
           )
           .timeout(Duration(seconds: 30));

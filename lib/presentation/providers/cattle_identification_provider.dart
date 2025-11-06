@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../data/services/pose_service.dart';
 import '../../data/services/bovino_service.dart';
 import '../../data/services/medicion_service.dart';
+import '../../data/services/age_prediction_service.dart';
 import '../../data/models/pose_model.dart';
 import '../../data/models/bovino_model.dart';
 import '../../data/models/medicion_model.dart';
@@ -519,7 +520,7 @@ class CattleIdentificationProvider extends ChangeNotifier {
   }
 
   /// Intentar calcular el peso si tenemos ambas variables
-  void _tryCalculateWeight() {
+  void _tryCalculateWeight() async {
     if (_variableA > 0 && _variableB > 0) {
       print("Calculando peso final con A: $_variableA, B: $_variableB");
       final perimetroTorsoCentimetros =
@@ -533,9 +534,49 @@ class CattleIdentificationProvider extends ChangeNotifier {
 
       _pesoEstimado = pesoEstimadoKg;
       print("Peso estimado calculado: $pesoEstimadoKg kg");
+
+      // 🎯 NUEVA LÓGICA: Predecir edad basada en el peso calculado
+      await _predictAgeFromWeight(pesoEstimadoKg);
+
       notifyListeners();
     } else {
       print("Esperando más datos - A: $_variableA, B: $_variableB");
+    }
+  }
+
+  /// Predecir edad usando el modelo de IA basado en el peso
+  Future<void> _predictAgeFromWeight(double pesoEnKg) async {
+    try {
+      debugPrint(
+        '🔮 Iniciando predicción de edad para peso: ${pesoEnKg.toStringAsFixed(2)} kg',
+      );
+
+      // Obtener instancia del servicio de predicción
+      final agePredictionService = AgePredictionService.instance;
+
+      // Asegurar que el modelo esté cargado
+      if (!agePredictionService.isModelLoaded) {
+        await agePredictionService.loadModel();
+      }
+
+      // Realizar predicción
+      final edadPredichaEnMeses = await agePredictionService.predictAge(
+        pesoEnKg,
+      );
+
+      if (edadPredichaEnMeses != null) {
+        _edadEstimada = edadPredichaEnMeses.round(); // Convertir a entero
+        debugPrint('✅ Edad predicha por IA: ${_edadEstimada} meses');
+      } else {
+        _edadEstimada = 24; // Valor por defecto si falla la predicción
+        debugPrint(
+          '⚠️ Predicción falló, usando edad por defecto: $_edadEstimada meses',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error en predicción de edad: $e');
+      _edadEstimada = 24; // Valor por defecto en caso de error
+      debugPrint('⚠️ Usando edad por defecto: $_edadEstimada meses');
     }
   }
 

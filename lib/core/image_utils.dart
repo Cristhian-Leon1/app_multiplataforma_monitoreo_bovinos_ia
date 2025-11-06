@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -24,20 +24,22 @@ class ImageUtils {
 
       if (image == null) return null;
 
-      // Leer los bytes de la imagen
-      final File imageFile = File(image.path);
-      final List<int> imageBytes = await imageFile.readAsBytes();
+      // ✅ Leer bytes directamente desde XFile (funciona en Web y Móvil)
+      final List<int> imageBytes = await image.readAsBytes();
 
-      // Determinar el tipo MIME basado en la extensión
+      // Determinar el tipo MIME basado en la extensión o nombre
       String mimeType = 'image/jpeg';
-      final String extension = image.path.toLowerCase();
+      final String fileName = image.name.toLowerCase();
 
-      if (extension.endsWith('.png')) {
+      if (fileName.endsWith('.png')) {
         mimeType = 'image/png';
-      } else if (extension.endsWith('.webp')) {
+      } else if (fileName.endsWith('.webp')) {
         mimeType = 'image/webp';
-      } else if (extension.endsWith('.jpg') || extension.endsWith('.jpeg')) {
+      } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
         mimeType = 'image/jpeg';
+      } else if (image.mimeType != null) {
+        // Usar el mimeType del archivo si está disponible
+        mimeType = image.mimeType!;
       }
 
       // Convertir a base64 CON el data URL (formato requerido por el backend)
@@ -67,20 +69,22 @@ class ImageUtils {
 
       if (image == null) return null;
 
-      // Leer los bytes de la imagen
-      final File imageFile = File(image.path);
-      final List<int> imageBytes = await imageFile.readAsBytes();
+      // ✅ Leer bytes directamente desde XFile (funciona en Web y Móvil)
+      final List<int> imageBytes = await image.readAsBytes();
 
-      // Determinar el tipo MIME basado en la extensión
+      // Determinar el tipo MIME basado en la extensión o nombre
       String mimeType = 'image/jpeg';
-      final String extension = image.path.toLowerCase();
+      final String fileName = image.name.toLowerCase();
 
-      if (extension.endsWith('.png')) {
+      if (fileName.endsWith('.png')) {
         mimeType = 'image/png';
-      } else if (extension.endsWith('.webp')) {
+      } else if (fileName.endsWith('.webp')) {
         mimeType = 'image/webp';
-      } else if (extension.endsWith('.jpg') || extension.endsWith('.jpeg')) {
+      } else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
         mimeType = 'image/jpeg';
+      } else if (image.mimeType != null) {
+        // Usar el mimeType del archivo si está disponible
+        mimeType = image.mimeType!;
       }
 
       // Convertir a base64 con el data URL (para mostrar en UI)
@@ -100,6 +104,17 @@ class ImageUtils {
     double? maxWidth = 300,
     double? maxHeight = 300,
   }) async {
+    // ✅ En Web, ir directo a la galería (no hay cámara en web)
+    if (kIsWeb) {
+      return await pickImageAsBase64(
+        source: ImageSource.gallery,
+        imageQuality: imageQuality,
+        maxWidth: maxWidth,
+        maxHeight: maxHeight,
+      );
+    }
+
+    // En móvil, mostrar opciones de galería o cámara
     final String? result = await showDialog<String?>(
       context: context,
       builder: (BuildContext context) {

@@ -8,6 +8,8 @@ class ApiService {
   static const Map<String, String> _headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'ngrok-skip-browser-warning':
+        'true', // ✅ Evitar página de advertencia de ngrok
   };
 
   /// Registrar un nuevo usuario
